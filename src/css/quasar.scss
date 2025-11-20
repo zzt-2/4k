@@ -1,0 +1,77 @@
+.q-card {
+	background-color: var(--bg-secondary);
+	box-shadow: 0 0 4px var(--accent-hover);
+	border-color: var(--accent-hover);
+}
+
+.q-panel,
+.q-table__container {
+	background-color: var(--bg-secondary);
+}
+
+.q-field {
+	background-color: var(--bg-tertiary);
+}
+
+.q-field__control {
+	color: var(--accent);
+}
+
+.q-field__label,
+.q-field__native {
+	color: var(--text-secondary);
+}
+
+.q-slider__text {
+	color: var(--text-placeholder);
+}
+
+.q-checkbox__bg {
+	color: var(--accent);
+}
+
+.q-radio__bg {
+	--text-primary: var(--accent);
+}
+
+.q-checkbox__svg {
+	background-color: var(--bg-primary);
+}
+
+.q-list,
+.q-menu {
+	background-color: var(--bg-primary);
+}
+
+.q-item {
+	border: 1px solid var(--border);
+}
+
+.q-icon {
+	color: var(--text-secondary);
+	&:hover {
+		color: var(--text-primary);
+	}
+}
+
+.q-table tbody tr:nth-child(odd) {
+	background:
+		linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--bg-primary);
+}
+
+.q-btn,
+.q-menu,
+.q-dialog,
+.q-tooltip,
+.q-select__menu,
+.q-menu .q-item,
+.q-select__dialog {
+	-webkit-app-region: no-drag !important;
+}
+
+.q-btn--outline,
+.q-input--outline {
+	&::before {
+		border: 1px solid var(--accent); // 固定颜色
+	}
+}

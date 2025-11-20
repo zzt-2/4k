@@ -1,81 +1,51 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+	<q-layout view="hHh lpR fFf" class="h-100vh flex flex-col">
+		<TopMenuBar />
+		<div class="hologram-grid min-h-0 flex-1 overflow-y-auto">
+			<TestPage />
+			<ParticleEffect />
+			<router-view />
+		</div>
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
-
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
-      </q-list>
-    </q-drawer>
-
-    <q-page-container>
-      <router-view />
-    </q-page-container>
-  </q-layout>
+		<!-- 设置面板 -->
+		<q-drawer
+			v-model="settingsStore.isSettingsPanelOpen"
+			side="left"
+			:width="600"
+			:breakpoint="0"
+			overlay
+			elevated
+		>
+			<SettingsPanel />
+		</q-drawer>
+	</q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
+import { provideAppManagers, useSettingsStore } from '@core/stores';
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev',
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev',
-  },
-];
+const appManagers = provideAppManagers({
+	debugMode: import.meta.env.DEV, // 开发环境启用调试
+});
 
-const leftDrawerOpen = ref(false);
+const settingsStore = useSettingsStore();
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
-}
+// 初始化所有管理器
+onMounted(async () => {
+	await appManagers.initialize();
+});
+
+// 清理
+onUnmounted(() => {
+	appManagers.destroy();
+});
 </script>
+
+<style scoped lang="scss">
+.hologram-grid {
+	background-image:
+		linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+	background-size: 10px 10px;
+}
+</style>

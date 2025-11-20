@@ -1,6 +1,6 @@
-# 速率测试 (4k)
+# Quasar App (test)
 
-速率测试
+A Quasar Project
 
 ## Install the dependencies
 

@@ -1,0 +1,23 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Quasar Electron: Main Process",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceRoot}",
+			"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/quasar",
+			"windows": {
+				"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/quasar.cmd"
+			},
+			"args": ["dev", "-m", "electron", "-- --inspect=5858"],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/.quasar/dev-electron/**/*.js",
+				"${workspaceRoot}/src-electron/**/*.js"
+			],
+			"autoAttachChildProcesses": true,
+			"outputCapture": "std"
+		}
+	]
+}

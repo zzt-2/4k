@@ -1,0 +1,32 @@
+/* =============== 工具类 =============== */
+.my-bg-primary {
+	background-color: var(--bg-primary);
+}
+
+.my-bg-secondary {
+	background-color: var(--bg-secondary);
+}
+
+.my-text-primary {
+	color: var(--text-primary);
+}
+
+.my-text-secondary {
+	color: var(--text-secondary);
+}
+
+.my-text-display {
+	color: var(--text-display);
+}
+
+.my-accent {
+	color: var(--accent);
+}
+
+.my-border-default {
+	border: 2px solid var(--border);
+}
+
+.shadow-on {
+	--shadow-size: 0 0 4px var(--border);
+}

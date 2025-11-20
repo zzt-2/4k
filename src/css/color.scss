@@ -1,0 +1,147 @@
+/* =============== 全局颜色系统 =============== */
+
+/* =============== 颜色变量 =============== */
+:root {
+	--default-primary: #1976d2;
+	--default-secondary: #26a69a;
+	--default-accent: #9c27b0;
+	--default-positive: #21ba45;
+	--default-negative: #c10015;
+	--default-info: #31ccec;
+	--default-warning: #f2c037;
+	--default-dark: #1d1d1d;
+	--default-dark-page: #121212;
+}
+
+/* 默认主题 - 浅色模式 */
+:root {
+	--bg-primary: #f0f4f8;
+	--bg-secondary: #ffffff;
+	--bg-tertiary: #ffffff;
+	--accent: #008b8b;
+	--accent-hover: #00ced1;
+	--text-primary: #1e293b;
+	--text-secondary: #475569;
+	--text-placeholder: #cbd5e1;
+	--border: #e2e8f0;
+}
+
+/* =============== 暖色主题 =============== */
+[data-theme='warm'] {
+	--bg-primary: #ffffef;
+	--bg-secondary: #fff9e6;
+	--bg-tertiary: #f8f4e6;
+	--accent: #e67e22;
+	--accent-hover: #d35400;
+	--text-primary: #2c3e50;
+	--text-secondary: #7f8c8d;
+	--text-placeholder: #bdc3c7;
+	--border: #ecf0f1;
+}
+
+/* =============== 淡蓝色主题 =============== */
+[data-theme='blue'] {
+	--bg-primary: #e2f7ff;
+	--bg-secondary: #ddfdff;
+	--bg-tertiary: #bbffff;
+	--accent: #3182ce;
+	--accent-hover: #2b6cb0;
+	--text-primary: #303e56;
+	--text-secondary: #3c4556;
+	--text-placeholder: #cbd5e0;
+	--border: #e2e8f0;
+}
+
+/* =============== 薄荷绿主题 =============== */
+[data-theme='mint'] {
+	--bg-primary: #eefffc;
+	--bg-secondary: #d8fff4;
+	--bg-tertiary: #c1fff2;
+	--accent: #059669;
+	--accent-hover: #26af88;
+	--text-primary: #043e2f;
+	--text-secondary: #065f46;
+	--text-placeholder: #b3d4c1;
+	--border: #d1fae5;
+}
+
+/* =============== 深色主题 =============== */
+[data-theme='dark'] {
+	--bg-primary: #111827;
+	--bg-secondary: #0c1528;
+	--bg-tertiary: #29282d;
+	--accent: #00d9d9;
+	--accent-hover: #00ffd9;
+	--text-primary: #34aee5;
+	--text-secondary: #ffffff;
+	--text-placeholder: #848484;
+	--border: #06b6d4;
+}
+
+/* =============== 海洋蓝主题 =============== */
+[data-theme='ocean'] {
+	--bg-primary: #0a1628;
+	--bg-secondary: #0d1f2d;
+	--bg-tertiary: #060e17;
+	--accent: #00bfff;
+	--accent-hover: #87ebff;
+	--text-primary: #e0f4ff;
+	--text-secondary: #8fa0b8;
+	--text-placeholder: #3d4a5c;
+	--border: #1a3a52;
+}
+
+/* =============== 森林绿主题 =============== */
+[data-theme='forest'] {
+	--bg-primary: #0d2f1a;
+	--bg-secondary: #132b1f;
+	--bg-tertiary: #08140d;
+	--accent: #00d98e;
+	--accent-hover: #2ecc71;
+	--text-primary: #d4ffdb;
+	--text-secondary: #8fb899;
+	--text-placeholder: #3d5a49;
+	--border: #1a4d2e;
+}
+
+/* ========== 科幻主题：量子紫 Quantum ========== */
+[data-theme='quantum-purple'] {
+	--bg-primary: #0b0e1a;
+	--bg-secondary: #0d1027;
+	--bg-tertiary: #24284d;
+	--accent: #00f5d4;
+	--accent-hover: #7c4cff;
+	--text-primary: #a1f5f9;
+	--text-secondary: #8c90c5;
+	--text-placeholder: #5a5f8a;
+	--border: #2de0e0;
+}
+
+/* ========== 科幻主题：星尘灰 Stardust ========== */
+[data-theme='stardust-gray'] {
+	--bg-primary: #121217;
+	--bg-secondary: #1d1d28;
+	--bg-tertiary: #0e0e14;
+	--accent: #aaff00;
+	--accent-hover: #ddff99;
+	--text-primary: #f2ffcc;
+	--text-secondary: #ccff66;
+	--text-placeholder: #4a4d3e;
+	--border: #333341;
+}
+
+/* =============== Quasar 主题颜色 =============== */
+
+:root {
+	/* 明确：用accent和bg-primary混合生成q-primary */
+	--q-primary: color-mix(in srgb, var(--bg-primary) 80%, var(--text-primary));
+	--q-secondary: color-mix(in srgb, var(--bg-secondary) 80%, var(--text-secondary));
+	--q-tertiary: color-mix(in srgb, var(--bg-tertiary) 60%, var(--text-primary));
+	--q-accent: color-mix(in srgb, var(--accent) 40%, var(--bg-secondary));
+	--q-positive: color-mix(in srgb, var(--default-positive) 40%, var(--bg-secondary));
+	--q-negative: color-mix(in srgb, var(--default-negative) 40%, var(--bg-secondary));
+	--q-info: color-mix(in srgb, var(--default-info) 40%, var(--bg-secondary));
+	--q-warning: color-mix(in srgb, var(--default-warning) 40%, var(--bg-secondary));
+	--q-dark: color-mix(in srgb, var(--default-dark) 40%, var(--bg-secondary));
+	--q-dark-page: color-mix(in srgb, var(--default-dark-page) 40%, var(--bg-secondary));
+}
