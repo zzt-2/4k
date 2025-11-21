@@ -3,7 +3,7 @@
  * 将大数据包切割为适合 UDP 传输的小包
  */
 
-import { createFrameHeader, FrameHeader, FRAME_HEADER_SIZE, parseFrameHeader } from './protocol';
+import { createFrameHeader, VIDEO_FRAME_HEADER_SIZE } from './protocol';
 
 /**
  * MTU 大小 (字节)
@@ -14,7 +14,7 @@ export const MTU = 1400;
 /**
  * 每个分片的最大数据大小 (字节)
  */
-export const MAX_PACKET_DATA_SIZE = MTU - FRAME_HEADER_SIZE; // 1388 字节
+export const MAX_PACKET_DATA_SIZE = MTU - VIDEO_FRAME_HEADER_SIZE; // 1388 字节
 
 /**
  * 判断数据是否需要分片
@@ -32,9 +32,6 @@ export function needsFragmentation(dataSize: number): boolean {
  * @returns 分片后的 Buffer 数组，每个 Buffer 包含协议头 + 数据
  */
 export function fragmentFrame(frameData: Buffer, frameId: number): Buffer[] {
-	// 从数据前 4 字节提取帧类型魔数
-	const frameTypeMagic = frameData.readUInt32BE(0);
-
 	const dataSize = frameData.length;
 	const totalPackets = Math.ceil(dataSize / MAX_PACKET_DATA_SIZE);
 	const packets: Buffer[] = [];
@@ -45,15 +42,12 @@ export function fragmentFrame(frameData: Buffer, frameId: number): Buffer[] {
 		const chunkData = frameData.subarray(start, end);
 
 		// 创建帧头
-		const header: FrameHeader = {
-			frameTypeMagic,
-			frameId: frameId & 0xffff, // 确保在 0-65535 范围内
-			packetIndex: i,
+		const headerBuffer = createFrameHeader(
+			frameId & 0xffff, // 确保在 0-65535 范围内
+			i, // packetIndex
 			totalPackets,
-			timestamp: Date.now() & 0xffff, // 使用当前时间戳
-		};
-
-		const headerBuffer = createFrameHeader(header);
+			Date.now() & 0xffff // 使用当前时间戳
+		);
 
 		// 组合帧头和数据
 		const packet = Buffer.concat([headerBuffer, chunkData]);

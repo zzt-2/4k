@@ -37,6 +37,7 @@ export default defineStore((/* { ssrContext } */) => {
 // 1. 独立管理器（无依赖）
 export * from './theme-manager';
 export * from './settings-store';
+export * from './frame-manager';
 
 // 2. 统一管理器（依赖其他管理器）
 export * from './use-editor-managers';

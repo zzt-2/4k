@@ -24,7 +24,7 @@ export function useH265Decoder() {
 
 			// 检查 H.265 支持
 			const config: VideoDecoderConfig = {
-				codec: 'hevc', // H.265
+				codec: 'avc1.640033', // H.265
 				codedWidth: width,
 				codedHeight: height,
 				hardwareAcceleration: 'prefer-hardware',

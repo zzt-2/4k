@@ -1,5 +1,6 @@
 import { ref, markRaw, provide, inject, type InjectionKey } from 'vue';
 import { provideThemeManager } from './theme-manager';
+import { provideFrameManager } from './frame-manager';
 
 // =============== 类型定义 ===============
 
@@ -44,7 +45,10 @@ export function createAppManagers(config: AppManagersConfig = {}) {
 	// 1. 主题管理器（无依赖，可独立运行）
 	const themeManager = markRaw(provideThemeManager());
 
-	// 2. 未来可以在这里添加更多管理器
+	// 2. 帧管理器（无依赖，可独立运行）
+	const frameManager = markRaw(provideFrameManager());
+
+	// 3. 未来可以在这里添加更多管理器
 	// const userManager = markRaw(provideUserManager());
 	// const routerManager = markRaw(provideRouterManager());
 	// 等等...
@@ -69,6 +73,7 @@ export function createAppManagers(config: AppManagersConfig = {}) {
 
 			// 按顺序初始化各个管理器
 			await themeManager.initialize();
+			await frameManager.initialize();
 
 			// 未来添加更多管理器的初始化
 			// await userManager.initialize();
@@ -103,6 +108,7 @@ export function createAppManagers(config: AppManagersConfig = {}) {
 			// routerManager.destroy?.();
 			// userManager.destroy?.();
 
+			frameManager.destroy?.();
 			// themeManager 目前没有 destroy 方法，如果需要可以添加
 
 			isInitialized.value = false;
@@ -129,6 +135,7 @@ export function createAppManagers(config: AppManagersConfig = {}) {
 
 			// 重新初始化各个管理器
 			await themeManager.initialize();
+			await frameManager.initialize();
 
 			// 未来添加更多管理器的重置
 			// await userManager.reset?.();
@@ -152,6 +159,7 @@ export function createAppManagers(config: AppManagersConfig = {}) {
 
 		// 管理器实例
 		themeManager,
+		frameManager,
 		// 未来添加更多管理器
 		// userManager,
 		// routerManager,

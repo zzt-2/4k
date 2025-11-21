@@ -48,9 +48,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useCamera } from '../composables/useCamera';
-import { useH265Encoder } from '../composables/useH265Encoder';
-import { networkAPI } from '@core/api';
-import type { EncodedFrameData } from '../types';
+import { useH265Encoder, type EncodedFrameData } from '../composables/useH265Encoder';
+import { useFrameManager } from '../../../core/stores/frame-manager';
 
 const props = defineProps<{
 	connectionId: number;
@@ -72,6 +71,7 @@ const {
 	stopEncoding,
 } = useH265Encoder();
 
+const frameManager = useFrameManager();
 const error = ref<string | null>(null);
 
 // 合并错误信息
@@ -119,24 +119,13 @@ async function toggleCamera() {
 async function handleEncodedFrame(frameData: EncodedFrameData) {
 	encodedFrameCount.value++;
 
-	// 在数据前添加帧类型标志（4 字节）
-	const dataWithHeader = new Uint8Array(4 + frameData.data.length);
-	// 写入帧类型魔数（大端序）
-	dataWithHeader[0] = (frameData.frameTypeMagic >> 24) & 0xff;
-	dataWithHeader[1] = (frameData.frameTypeMagic >> 16) & 0xff;
-	dataWithHeader[2] = (frameData.frameTypeMagic >> 8) & 0xff;
-	dataWithHeader[3] = frameData.frameTypeMagic & 0xff;
-	// 复制实际数据
-	dataWithHeader.set(frameData.data, 4);
-
-	// 发送到主进程（自动分片）
-	// 注意：networkAPI.sendData 需要 number[]，所以需要转换
-	const result = await networkAPI.sendData({
-		connectionId: props.connectionId,
-		data: Array.from(dataWithHeader),
-		remoteAddress: props.remoteAddress,
-		remotePort: props.remotePort,
-	});
+	// 使用帧管理器发送视频帧
+	const result = await frameManager.sendVideoFrame(
+		props.connectionId,
+		frameData.data,
+		props.remoteAddress,
+		props.remotePort
+	);
 
 	if (!result.success) {
 		console.error('[CameraPreview] Error sending frame:', result.error);

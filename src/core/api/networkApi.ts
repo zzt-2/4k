@@ -28,6 +28,15 @@ export const networkAPI = {
 	getConnectionStatus: (params: { connectionId: number }) =>
 		window.electron.networkAPI.getConnectionStatus(params),
 
-	// TODO: 预留数据接收监听
-	// onDataReceived: (callback: (data: any) => void) => { ... }
+	/**
+	 * 监听视频帧接收
+	 */
+	onVideoFrame: (callback: (event: any, data: any) => void) =>
+		window.electron.networkAPI.onVideoFrame(callback),
+
+	/**
+	 * 监听数据帧接收
+	 */
+	onDataFrame: (callback: (event: any, data: any) => void) =>
+		window.electron.networkAPI.onDataFrame(callback),
 };

@@ -24,6 +24,19 @@ export const networkAPI = {
 	getConnectionStatus: (params: { connectionId: number }) =>
 		ipcRenderer.invoke('network-get-status', params),
 
-	// TODO: 预留数据接收监听
-	// onDataReceived: (callback: (data: any) => void) => { ... }
+	/**
+	 * 监听视频帧接收
+	 */
+	onVideoFrame: (callback: (event: any, data: any) => void) => {
+		ipcRenderer.on('network:video-frame', callback);
+		return () => ipcRenderer.removeListener('network:video-frame', callback);
+	},
+
+	/**
+	 * 监听数据帧接收
+	 */
+	onDataFrame: (callback: (event: any, data: any) => void) => {
+		ipcRenderer.on('network:data-frame', callback);
+		return () => ipcRenderer.removeListener('network:data-frame', callback);
+	},
 };

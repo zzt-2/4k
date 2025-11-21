@@ -31,9 +31,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useH265Decoder } from '../composables/useH265Decoder';
-import { networkAPI } from '@core/api';
-import type { ReceivedFrameData } from '../types';
-import { FrameTypeMagic } from '../types';
+import { useFrameManager } from '../../../core/stores/frame-manager';
+import type { ParsedFrame } from '../../../core/types/protocol';
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const receivedFrameCount = ref(0);
@@ -50,6 +49,7 @@ const {
 	drawFrameToCanvas,
 } = useH265Decoder();
 
+const frameManager = useFrameManager();
 let unsubscribe: (() => void) | null = null;
 let frameTimestamps: number[] = [];
 
@@ -64,8 +64,8 @@ onMounted(async () => {
 		}
 	});
 
-	// 监听接收到的完整帧
-	unsubscribe = networkAPI.onFrameReceived(handleReceivedFrame);
+	// 使用帧管理器监听视频帧
+	unsubscribe = frameManager.onVideoFrame(handleReceivedFrame);
 });
 
 onUnmounted(() => {
@@ -74,12 +74,7 @@ onUnmounted(() => {
 	}
 });
 
-function handleReceivedFrame(frame: ReceivedFrameData) {
-	// 只处理视频帧
-	if (frame.frameTypeMagic !== FrameTypeMagic.VIDEO_FRAME) {
-		return;
-	}
-
+function handleReceivedFrame(frame: ParsedFrame) {
 	receivedFrameCount.value++;
 
 	// 计算延迟
@@ -97,8 +92,7 @@ function handleReceivedFrame(frame: ReceivedFrameData) {
 	}
 
 	// 解码帧
-	const data = new Uint8Array(frame.data);
-	decodeChunk(data, frame.timestamp, receivedFrameCount.value % 30 === 1);
+	decodeChunk(frame.data, frame.timestamp, frame.isKeyFrame || false);
 }
 
 // 监听解码器错误

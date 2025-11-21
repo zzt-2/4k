@@ -3,7 +3,13 @@
  * 将接收到的分片重组为完整数据包
  */
 
-import { parseFrameHeader, FrameTypeMagic, FRAME_HEADER_SIZE, getFrameTypeName } from './protocol';
+import {
+	parseFrameHeader,
+	VIDEO_FRAME_HEADER_SIZE,
+	getFrameTypeName,
+	type VideoFrameHeader,
+} from './protocol';
+import type { FrameDefinition } from '../../../../src/core/types/protocol';
 
 /**
  * 分片信息
@@ -21,8 +27,8 @@ interface PacketFragment {
  * 帧缓存信息
  */
 interface FrameBuffer {
-	/** 数据类型 */
-	frameTypeMagic: FrameTypeMagic;
+	/** 帧定义 */
+	definition: FrameDefinition;
 	/** 帧 ID */
 	frameId: number;
 	/** 总分片数 */
@@ -39,8 +45,8 @@ interface FrameBuffer {
  * 完整帧数据
  */
 export interface CompleteFrame {
-	/** 数据类型 */
-	frameTypeMagic: FrameTypeMagic;
+	/** 帧定义 */
+	definition: FrameDefinition;
 	/** 帧 ID */
 	frameId: number;
 	/** 时间戳 */
@@ -86,7 +92,7 @@ export class FrameReassembler {
 	 * @param packet 包含协议头的完整数据包
 	 */
 	public processPacket(packet: Buffer): void {
-		if (packet.length < FRAME_HEADER_SIZE) {
+		if (packet.length < VIDEO_FRAME_HEADER_SIZE) {
 			console.warn(`[FrameReassembler] Packet too small: ${packet.length} bytes`);
 			return;
 		}
@@ -94,16 +100,16 @@ export class FrameReassembler {
 		try {
 			// 解析帧头
 			const header = parseFrameHeader(packet);
-			const { frameTypeMagic, frameId, packetIndex, totalPackets, timestamp } = header;
+			const { definition, frameId, packetIndex, totalPackets, timestamp } = header;
 
 			// 提取数据部分（去掉协议头）
-			const data = packet.subarray(FRAME_HEADER_SIZE);
+			const data = packet.subarray(VIDEO_FRAME_HEADER_SIZE);
 
 			// 获取或创建帧缓存
 			let frameBuffer = this.frameBuffers.get(frameId);
 			if (!frameBuffer) {
 				frameBuffer = {
-					frameTypeMagic,
+					definition,
 					frameId,
 					totalPackets,
 					timestamp,
@@ -145,7 +151,7 @@ export class FrameReassembler {
 	 * @param frameBuffer 帧缓存
 	 */
 	private assembleAndEmit(frameBuffer: FrameBuffer): void {
-		const { frameTypeMagic, frameId, totalPackets, timestamp, fragments } = frameBuffer;
+		const { definition, frameId, totalPackets, timestamp, fragments } = frameBuffer;
 
 		// 按分片序号排序并拼接数据
 		const sortedFragments: Buffer[] = [];
@@ -162,7 +168,7 @@ export class FrameReassembler {
 
 		// 触发回调
 		const completeFrame: CompleteFrame = {
-			frameTypeMagic,
+			definition,
 			frameId,
 			timestamp,
 			data: completeData,
@@ -171,7 +177,7 @@ export class FrameReassembler {
 		this.onCompleteFrame(completeFrame);
 
 		console.log(
-			`[FrameReassembler] Assembled frame ${frameId} (${getFrameTypeName(frameTypeMagic)}): ${completeData.length} bytes from ${totalPackets} packets`
+			`[FrameReassembler] Assembled frame ${frameId} (${getFrameTypeName(definition.magic)}): ${completeData.length} bytes from ${totalPackets} packets`
 		);
 	}
 

@@ -1,5 +1,6 @@
 import { ConnectionInfo, ConnectionStatus } from './types';
 import { FrameReassembler, CompleteFrame } from './utils/reassembler';
+import { detectFrameCategory } from './utils/protocol';
 import { BrowserWindow } from 'electron';
 
 /**
@@ -86,38 +87,59 @@ export abstract class BaseConnection {
 		// 更新接收统计
 		this.updateReceiveStats(data.length);
 
-		// 传递给帧重组器处理
-		this.frameReassembler.processPacket(data);
+		// 检测帧类别
+		const category = detectFrameCategory(data);
 
-		// 保留旧的回调接口（用于非视频流数据）
-		this.onDataReceived(data, remoteAddress, remotePort);
+		if (category === 'video-frame') {
+			// 视频帧：传递给帧重组器处理（会自动调用 handleCompleteFrame）
+			this.frameReassembler.processPacket(data);
+		} else if (category === 'data-frame') {
+			// 数据帧：直接发送到渲染进程（不需要分片重组）
+			this.handleDataFrame(data);
+		}
 	}
 
 	/**
-	 * 处理完整帧（重组完成后的回调）
+	 * 处理数据帧（不需要重组）
+	 * @param data 数据帧
+	 */
+	protected handleDataFrame(data: Buffer): void {
+		const mainWindow = BrowserWindow.getAllWindows()[0];
+		if (mainWindow) {
+			mainWindow.webContents.send('network:data-frame', {
+				connectionId: this._id,
+				data: Array.from(data),
+			});
+		}
+	}
+
+	/**
+	 * 处理完整帧（重组完成后的回调，仅用于视频帧）
 	 * @param frame 完整帧数据
 	 */
 	protected handleCompleteFrame(frame: CompleteFrame): void {
 		// 通过 IPC 发送到渲染进程
 		const mainWindow = BrowserWindow.getAllWindows()[0];
 		if (mainWindow) {
-			mainWindow.webContents.send('network:frame-received', {
+			mainWindow.webContents.send('network:video-frame', {
 				connectionId: this._id,
-				frameTypeMagic: frame.frameTypeMagic,
 				frameId: frame.frameId,
 				timestamp: frame.timestamp,
-				data: Array.from(frame.data), // 转换为数组以便 IPC 传输
+				data: Array.from(frame.data), // 纯数据，已移除帧头
+				isKeyFrame: this.isKeyFrame(frame.data),
 			});
 		}
 	}
 
 	/**
-	 * 数据接收回调（预留接口）
-	 * 子类可以重写此方法以自定义处理逻辑
+	 * 检测是否为关键帧
+	 * @param data 帧数据
 	 */
-	protected onDataReceived(data: Buffer, remoteAddress: string, remotePort: number): void {
-		// 默认实现：暂不处理
-		// 用于非视频流数据的处理
+	private isKeyFrame(data: Buffer): boolean {
+		// H265: NAL unit type == 19-20 (IDR)
+		if (data.length < 5) return false;
+		const nalType = (data[4] >> 1) & 0x3f;
+		return nalType >= 19 && nalType <= 20;
 	}
 
 	/**

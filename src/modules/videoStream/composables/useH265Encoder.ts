@@ -4,8 +4,16 @@
  */
 
 import { ref, onUnmounted } from 'vue';
-import type { EncodedFrameData } from '../types';
-import { FrameTypeMagic } from '../types';
+
+/**
+ * 编码后的帧数据
+ */
+export interface EncodedFrameData {
+	frameId: number;
+	timestamp: number;
+	data: Uint8Array;
+	isKeyFrame: boolean;
+}
 
 export function useH265Encoder() {
 	const encoder = ref<VideoEncoder | null>(null);
@@ -24,9 +32,9 @@ export function useH265Encoder() {
 	 * @param framerate 帧率，默认 30fps
 	 */
 	async function initEncoder(
-		width: number = 3840,
-		height: number = 2160,
-		bitrate: number = 20_000_000,
+		width: number,
+		height: number,
+		bitrate: number = 5_000_000,
 		framerate: number = 30
 	) {
 		try {
@@ -34,7 +42,7 @@ export function useH265Encoder() {
 
 			// 检查 H.265 支持
 			const config: VideoEncoderConfig = {
-				codec: 'hevc', // H.265
+				codec: 'avc1.640033', // H.265
 				width,
 				height,
 				bitrate,
@@ -44,7 +52,7 @@ export function useH265Encoder() {
 
 			const support = await VideoEncoder.isConfigSupported(config);
 			if (!support.supported) {
-				throw new Error('H.265 编码不受支持，请安装 HEVC 视频扩展');
+				throw new Error('H.265 编码器不支持当前配置');
 			}
 
 			// 创建编码器
@@ -77,7 +85,6 @@ export function useH265Encoder() {
 		chunk.copyTo(data);
 
 		const frameData: EncodedFrameData = {
-			frameTypeMagic: FrameTypeMagic.VIDEO_FRAME,
 			frameId: frameCounter.value,
 			timestamp: chunk.timestamp,
 			data,
