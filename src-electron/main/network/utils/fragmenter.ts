@@ -1,0 +1,73 @@
+/**
+ * 帧分片工具
+ * 将大数据包切割为适合 UDP 传输的小包
+ */
+
+import { createFrameHeader, FrameHeader, FRAME_HEADER_SIZE, parseFrameHeader } from './protocol';
+
+/**
+ * MTU 大小 (字节)
+ * 协议头 12 字节 + 数据 1388 字节 = 1400 字节
+ */
+export const MTU = 1400;
+
+/**
+ * 每个分片的最大数据大小 (字节)
+ */
+export const MAX_PACKET_DATA_SIZE = MTU - FRAME_HEADER_SIZE; // 1388 字节
+
+/**
+ * 判断数据是否需要分片
+ * @param dataSize 数据大小（字节）
+ * @returns 是否需要分片
+ */
+export function needsFragmentation(dataSize: number): boolean {
+	return dataSize > MTU;
+}
+
+/**
+ * 将大数据包分片为多个小包
+ * @param frameData 原始数据（已包含帧类型标志在前 4 字节）
+ * @param frameId 帧 ID
+ * @returns 分片后的 Buffer 数组，每个 Buffer 包含协议头 + 数据
+ */
+export function fragmentFrame(frameData: Buffer, frameId: number): Buffer[] {
+	// 从数据前 4 字节提取帧类型魔数
+	const frameTypeMagic = frameData.readUInt32BE(0);
+
+	const dataSize = frameData.length;
+	const totalPackets = Math.ceil(dataSize / MAX_PACKET_DATA_SIZE);
+	const packets: Buffer[] = [];
+
+	for (let i = 0; i < totalPackets; i++) {
+		const start = i * MAX_PACKET_DATA_SIZE;
+		const end = Math.min(start + MAX_PACKET_DATA_SIZE, dataSize);
+		const chunkData = frameData.subarray(start, end);
+
+		// 创建帧头
+		const header: FrameHeader = {
+			frameTypeMagic,
+			frameId: frameId & 0xffff, // 确保在 0-65535 范围内
+			packetIndex: i,
+			totalPackets,
+			timestamp: Date.now() & 0xffff, // 使用当前时间戳
+		};
+
+		const headerBuffer = createFrameHeader(header);
+
+		// 组合帧头和数据
+		const packet = Buffer.concat([headerBuffer, chunkData]);
+		packets.push(packet);
+	}
+
+	return packets;
+}
+
+/**
+ * 计算数据需要多少个分片
+ * @param dataSize 数据大小（字节）
+ * @returns 分片数量
+ */
+export function calculatePacketCount(dataSize: number): number {
+	return Math.ceil(dataSize / MAX_PACKET_DATA_SIZE);
+}

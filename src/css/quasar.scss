@@ -17,8 +17,12 @@
 	color: var(--accent);
 }
 
-.q-field__label,
 .q-field__native {
+	color: var(--text-primary);
+}
+
+.q-item__label,
+.q-field__label {
 	color: var(--text-secondary);
 }
 

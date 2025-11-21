@@ -11,15 +11,19 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    CameraPreview: typeof import('./modules/videoStream/components/CameraPreview.vue')['default']
     CenterControlArea: typeof import('./core/components/CenterControlArea.vue')['default']
     ErrorNotFound: typeof import('./pages/ErrorNotFound.vue')['default']
     IndexPage: typeof import('./pages/IndexPage.vue')['default']
+    NetworkTestPage: typeof import('./pages/NetworkTestPage.vue')['default']
     ParticleEffect: typeof import('./core/components/ParticleEffect.vue')['default']
+    RemoteVideoDisplay: typeof import('./modules/videoStream/components/RemoteVideoDisplay.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SciFiButton: typeof import('./core/components/SciFiButton.vue')['default']
     SettingsPanel: typeof import('./core/components/SettingsPanel.vue')['default']
     TestPage: typeof import('./pages/TestPage.vue')['default']
     TopMenuBar: typeof import('./core/components/TopMenuBar.vue')['default']
+    VideoStreamDemo: typeof import('./pages/VideoStreamDemo.vue')['default']
   }
 }

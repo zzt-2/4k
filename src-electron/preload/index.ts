@@ -1,9 +1,11 @@
 import { contextBridge } from 'electron';
 import { windowAPI } from './window';
+import { networkAPI } from './network';
 
 // 动态导入所有API模块
 export const api = {
 	windowAPI,
+	networkAPI,
 };
 
 // 添加类型检查

@@ -4,3 +4,6 @@
 
 // 窗口API
 export { windowAPI } from './windowApi';
+
+// 网络API
+export { networkAPI } from './networkApi';
