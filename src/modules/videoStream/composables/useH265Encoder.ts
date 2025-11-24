@@ -44,13 +44,15 @@ export function useH265Encoder() {
 			// 检查 H.265 支持
 			const config: VideoEncoderConfig = {
 				// codec: 'avc1.640033', // H.264
+				// avc: { format: 'annexb' },
 				codec: 'hvc1.1.6.L153.B0', // H.265
+				// @ts-ignore: TS定义缺失，但运行时支持
+				hevc: { format: 'annexb' },
 				width,
 				height,
 				bitrate,
 				framerate,
 				hardwareAcceleration: 'prefer-hardware',
-				avc: { format: 'annexb' },
 			};
 
 			const support = await VideoEncoder.isConfigSupported(config);
