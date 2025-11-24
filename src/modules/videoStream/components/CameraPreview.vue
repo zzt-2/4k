@@ -7,7 +7,7 @@
 					flat
 					round
 					dense
-					:icon="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+					:icon="isFullscreen ? 'fullscreen_exit' : 'fullscreen'"
 					@click="toggleFullscreen"
 					color="accent"
 				>
@@ -17,7 +17,7 @@
 				<q-btn
 					:color="isActive ? 'negative' : 'primary'"
 					:label="isActive ? '停止采集' : '开始采集'"
-					:icon="isActive ? 'mdi-camera-off' : 'mdi-camera'"
+					:icon="isActive ? 'no_photography' : 'camera_alt'"
 					@click="toggleCamera"
 					:disable="isEncoding"
 					size="sm"
@@ -26,7 +26,7 @@
 			</div>
 		</q-card-section>
 
-		<q-card-section
+		<div
 			class="col relative-position q-pa-none video-container overflow-hidden bg-black"
 			ref="containerRef"
 		>
@@ -35,16 +35,15 @@
 				autoplay
 				muted
 				playsinline
-				class="fit absolute-center"
+				class="fit absolute-center z-top"
 				style="object-fit: contain"
 			></video>
-			<canvas ref="canvasRef" class="hidden"></canvas>
 
 			<transition name="fade">
 				<div v-if="error" class="absolute-top q-ma-md z-top">
 					<q-banner class="bg-negative rounded-borders shadow-2 text-white" dense>
 						<template v-slot:avatar>
-							<q-icon name="mdi-alert-circle" color="white" />
+							<q-icon name="error" color="white" />
 						</template>
 						{{ error }}
 					</q-banner>
@@ -58,21 +57,21 @@
 				>
 					<div class="row q-gutter-x-lg items-center justify-center">
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-monitor-screenshot" color="accent" />
+							<q-icon name="dvr" color="accent" />
 							<span>{{ videoSettings?.width }} x {{ videoSettings?.height }}</span>
 						</div>
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-speedometer" color="secondary" />
+							<q-icon name="speed" color="secondary" />
 							<span>{{ videoSettings?.frameRate }} fps</span>
 						</div>
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-counter" color="primary" />
+							<q-icon name="analytics" color="primary" />
 							<span>编码帧数: {{ encodedFrameCount }}</span>
 						</div>
 					</div>
 				</div>
 			</transition>
-		</q-card-section>
+		</div>
 	</q-card>
 </template>
 
@@ -89,7 +88,6 @@ const props = defineProps<{
 }>();
 
 const videoRef = ref<HTMLVideoElement | null>(null);
-const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
 const videoSettings = ref<MediaTrackSettings | null>(null);
 const encodedFrameCount = ref(0);

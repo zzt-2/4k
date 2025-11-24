@@ -7,7 +7,7 @@
 					flat
 					round
 					dense
-					:icon="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+					:icon="isFullscreen ? 'fullscreen_exit' : 'fullscreen'"
 					@click="toggleFullscreen"
 					color="accent"
 				>
@@ -16,17 +16,21 @@
 			</div>
 		</q-card-section>
 
-		<q-card-section
+		<div
 			class="col relative-position q-pa-none video-container overflow-hidden bg-black"
 			ref="containerRef"
 		>
-			<canvas ref="canvasRef" class="fit absolute-center" style="object-fit: contain"></canvas>
+			<canvas
+				ref="canvasRef"
+				class="fit absolute-center z-top"
+				style="object-fit: contain"
+			></canvas>
 
 			<transition name="fade">
 				<div v-if="error" class="absolute-top q-ma-md z-top">
 					<q-banner class="bg-negative rounded-borders shadow-2 text-white" dense>
 						<template v-slot:avatar>
-							<q-icon name="mdi-alert-circle" color="white" />
+							<q-icon name="error" color="white" />
 						</template>
 						{{ error }}
 					</q-banner>
@@ -38,7 +42,7 @@
 					v-if="!isDecoding && !error"
 					class="absolute-center text-grey-5 column flex-center text-center"
 				>
-					<q-icon name="mdi-television-off" size="4rem" class="q-mb-md opacity-50" />
+					<q-icon name="tv_off" size="4rem" class="q-mb-md opacity-50" />
 					<div class="text-h6 opacity-75">等待接收视频...</div>
 					<div class="text-caption q-mt-sm opacity-50">请确保发送端已开启采集</div>
 				</div>
@@ -51,21 +55,21 @@
 				>
 					<div class="row q-gutter-x-lg items-center justify-center">
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-counter" color="primary" />
+							<q-icon name="analytics" color="primary" />
 							<span>接收帧数: {{ receivedFrameCount }}</span>
 						</div>
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-speedometer" color="secondary" />
+							<q-icon name="speed" color="secondary" />
 							<span>帧率: {{ fps.toFixed(1) }} fps</span>
 						</div>
 						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="mdi-clock-outline" color="accent" />
+							<q-icon name="schedule" color="accent" />
 							<span>延迟: {{ latency }} ms</span>
 						</div>
 					</div>
 				</div>
 			</transition>
-		</q-card-section>
+		</div>
 	</q-card>
 </template>
 
