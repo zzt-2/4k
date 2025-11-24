@@ -26,7 +26,7 @@ export function useCamera() {
 				video: {
 					width: { ideal: resolution.width },
 					height: { ideal: resolution.height },
-					frameRate: { ideal: 30 },
+					frameRate: { ideal: 60 },
 				},
 				audio: false,
 			});

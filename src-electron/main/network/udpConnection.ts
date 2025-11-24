@@ -20,16 +20,19 @@ export class UDPConnection extends BaseConnection {
 		// 创建 UDP socket
 		this.socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
-		// 设置 UDP 缓冲区大小为 8MB（用于 4K 视频流）
-		try {
-			this.socket.setRecvBufferSize(8 * 1024 * 1024); // 8MB 接收缓冲区
-			this.socket.setSendBufferSize(8 * 1024 * 1024); // 8MB 发送缓冲区
-		} catch (error) {
-			console.warn('[UDPConnection] Failed to set buffer size:', error);
-		}
-
 		// 绑定端口
 		this.socket.bind(this.localPort, this.localAddress, () => {
+			// 设置 UDP 缓冲区大小为 8MB（用于 4K 视频流）
+			try {
+				this.socket.setRecvBufferSize(8 * 1024 * 1024); // 8MB 接收缓冲区
+				this.socket.setSendBufferSize(8 * 1024 * 1024); // 8MB 发送缓冲区
+				const recvSize = this.socket.getRecvBufferSize();
+				const sendSize = this.socket.getSendBufferSize();
+				console.log(`[UDPConnection] Buffer sizes set. Recv: ${recvSize}, Send: ${sendSize}`);
+			} catch (error) {
+				console.warn('[UDPConnection] Failed to set buffer size:', error);
+			}
+
 			this.setState('connected');
 		});
 

@@ -136,10 +136,14 @@ export abstract class BaseConnection {
 	 * @param data 帧数据
 	 */
 	private isKeyFrame(data: Buffer): boolean {
-		// H265: NAL unit type == 19-20 (IDR)
 		if (data.length < 5) return false;
-		const nalType = (data[4] >> 1) & 0x3f;
-		return nalType >= 19 && nalType <= 20;
+		// H265: NAL unit type == 19-20 (IDR)
+		// const nalType = (data[4] >> 1) & 0x3f;
+		// return nalType >= 16 && nalType <= 21;
+		// H264: NAL unit type == 5 (IDR)
+		// const nalType = (data[4] >> 1) & 0x1f;
+		// return nalType === 5;
+		return false;
 	}
 
 	/**

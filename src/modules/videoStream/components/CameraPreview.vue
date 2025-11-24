@@ -109,7 +109,12 @@ async function toggleCamera() {
 
 		// 初始化编码器
 		const settings = videoTrack.value.getSettings();
-		await initEncoder(settings.width, settings.height, 20_000_000, settings.frameRate || 30);
+		await initEncoder(
+			settings.width || 3840,
+			settings.height || 2160,
+			5_000_000,
+			settings.frameRate || 60
+		);
 
 		// 开始编码
 		await startEncodingFromTrack(videoTrack.value, handleEncodedFrame);

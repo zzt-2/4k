@@ -20,6 +20,7 @@ export function useH265Encoder() {
 	const isEncoding = ref(false);
 	const error = ref<string | null>(null);
 	const frameCounter = ref(0);
+	const frameRate = ref(30);
 
 	// 编码帧回调
 	let onEncodedFrameCallback: ((frameData: EncodedFrameData) => void) | null = null;
@@ -35,19 +36,21 @@ export function useH265Encoder() {
 		width: number,
 		height: number,
 		bitrate: number = 5_000_000,
-		framerate: number = 30
+		framerate: number = 60
 	) {
 		try {
 			error.value = null;
 
 			// 检查 H.265 支持
 			const config: VideoEncoderConfig = {
-				codec: 'avc1.640033', // H.265
+				// codec: 'avc1.640033', // H.264
+				codec: 'hvc1.1.6.L153.B0', // H.265
 				width,
 				height,
 				bitrate,
 				framerate,
 				hardwareAcceleration: 'prefer-hardware',
+				avc: { format: 'annexb' },
 			};
 
 			const support = await VideoEncoder.isConfigSupported(config);
@@ -66,6 +69,7 @@ export function useH265Encoder() {
 
 			encoder.value.configure(config);
 			isEncoding.value = true;
+			frameRate.value = framerate;
 
 			console.log('[useH265Encoder] Encoder initialized:', config);
 		} catch (err) {
@@ -108,7 +112,7 @@ export function useH265Encoder() {
 
 		try {
 			// 每 30 帧插入一个关键帧
-			const keyFrame = frameCounter.value % 30 === 0;
+			const keyFrame = frameCounter.value % frameRate.value === 0;
 			encoder.value.encode(videoFrame, { keyFrame });
 		} catch (err) {
 			console.error('[useH265Encoder] Error encoding frame:', err);
