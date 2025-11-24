@@ -23,7 +23,7 @@ interface ConnectionInfoResponse {
 
 interface SendDataParams {
 	connectionId: number;
-	data: number[];
+	data: ArrayBuffer;
 	remoteAddress?: string;
 	remotePort?: number;
 }

@@ -35,16 +35,14 @@ export function useH265Encoder() {
 	async function initEncoder(
 		width: number,
 		height: number,
-		bitrate: number = 5_000_000,
+		bitrate: number = 50_000_000,
 		framerate: number = 60
 	) {
 		try {
 			error.value = null;
 
 			// 检查 H.265 支持
-			const config: VideoEncoderConfig = {
-				// codec: 'avc1.640033', // H.264
-				// avc: { format: 'annexb' },
+			let config: VideoEncoderConfig = {
 				codec: 'hvc1.1.6.L153.B0', // H.265
 				// @ts-ignore: TS定义缺失，但运行时支持
 				hevc: { format: 'annexb' },
@@ -57,8 +55,19 @@ export function useH265Encoder() {
 
 			const support = await VideoEncoder.isConfigSupported(config);
 			if (!support.supported) {
-				throw new Error('H.265 编码器不支持当前配置');
+				console.warn('H.265 编码器不支持当前配置');
 			}
+
+			config = {
+				codec: 'avc1.640033',
+				avc: { format: 'annexb' },
+				width,
+				height,
+				bitrate,
+				framerate,
+				latencyMode: 'realtime',
+				hardwareAcceleration: 'no-preference',
+			};
 
 			// 创建编码器
 			encoder.value = new VideoEncoder({
@@ -121,19 +130,13 @@ export function useH265Encoder() {
 		}
 	}
 
-	/**
-	 * 从 MediaStreamTrack 读取帧并编码
-	 * @param track 视频轨道
-	 * @param onEncodedFrame 编码完成回调
-	 */
 	async function startEncodingFromTrack(
 		track: MediaStreamTrack,
 		onEncodedFrame: (frameData: EncodedFrameData) => void
 	) {
 		onEncodedFrameCallback = onEncodedFrame;
 
-		// 使用 MediaStreamTrackProcessor 读取帧
-		// @ts-ignore - MediaStreamTrackProcessor 可能不在所有类型定义中
+		// @ts-ignore
 		const processor = new MediaStreamTrackProcessor({ track });
 		const reader = processor.readable.getReader();
 
@@ -143,8 +146,16 @@ export function useH265Encoder() {
 					const { done, value } = await reader.read();
 					if (done) break;
 
-					encodeFrame(value);
-					value.close(); // 释放 VideoFrame
+					// === 关键修改：检查编码器队列 ===
+					// 允许的最大队列深度。4K下建议设置小一点，比如 2-5
+					// 如果队列里积压了太多帧，说明编码跟不上或者发送跟不上，直接丢弃当前帧
+					if (encoder.value && encoder.value.encodeQueueSize > 2) {
+						console.warn('[Encoder] Drop frame due to congestion');
+						value.close(); // 必须释放，否则内存泄漏
+					} else {
+						encodeFrame(value);
+						value.close();
+					}
 				} catch (err) {
 					console.error('[useH265Encoder] Error processing frame:', err);
 					break;

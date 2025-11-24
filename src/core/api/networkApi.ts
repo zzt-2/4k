@@ -17,7 +17,7 @@ export const networkAPI = {
 
 	sendData: (params: {
 		connectionId: number;
-		data: number[];
+		data: ArrayBuffer;
 		remoteAddress?: string;
 		remotePort?: number;
 	}) => window.electron.networkAPI.sendData(params),

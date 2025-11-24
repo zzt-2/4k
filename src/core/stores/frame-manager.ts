@@ -262,15 +262,11 @@ function createFrameManager() {
 		remotePort: number
 	): Promise<{ success: boolean; error?: string }> => {
 		try {
-			if (!window.electron?.networkAPI) {
-				throw new Error('Network API not available');
-			}
-
 			const frameData = assembleVideoFrame(data);
 
 			const result = await networkAPI.sendData({
 				connectionId,
-				data: Array.from(frameData),
+				data: frameData.buffer,
 				remoteAddress,
 				remotePort,
 			});
@@ -295,15 +291,11 @@ function createFrameManager() {
 		remotePort: number
 	): Promise<{ success: boolean; error?: string }> => {
 		try {
-			if (!window.electron?.networkAPI) {
-				throw new Error('Network API not available');
-			}
-
 			const frameData = assembleDataFrame(frameId);
 
 			const result = await networkAPI.sendData({
 				connectionId,
-				data: Array.from(frameData),
+				data: frameData.buffer,
 				remoteAddress,
 				remotePort,
 			});

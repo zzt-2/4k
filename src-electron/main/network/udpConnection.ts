@@ -24,8 +24,8 @@ export class UDPConnection extends BaseConnection {
 		this.socket.bind(this.localPort, this.localAddress, () => {
 			// 设置 UDP 缓冲区大小为 8MB（用于 4K 视频流）
 			try {
-				this.socket.setRecvBufferSize(8 * 1024 * 1024); // 8MB 接收缓冲区
-				this.socket.setSendBufferSize(8 * 1024 * 1024); // 8MB 发送缓冲区
+				this.socket.setRecvBufferSize(32 * 1024 * 1024); // 8MB 接收缓冲区
+				this.socket.setSendBufferSize(32 * 1024 * 1024); // 8MB 发送缓冲区
 				const recvSize = this.socket.getRecvBufferSize();
 				const sendSize = this.socket.getSendBufferSize();
 				console.log(`[UDPConnection] Buffer sizes set. Recv: ${recvSize}, Send: ${sendSize}`);

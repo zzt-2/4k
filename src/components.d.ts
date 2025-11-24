@@ -22,6 +22,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SciFiButton: typeof import('./core/components/SciFiButton.vue')['default']
     SettingsPanel: typeof import('./core/components/SettingsPanel.vue')['default']
+    StreamConfiguration: typeof import('./modules/videoStream/components/StreamConfiguration.vue')['default']
     TestPage: typeof import('./pages/TestPage.vue')['default']
     TopMenuBar: typeof import('./core/components/TopMenuBar.vue')['default']
     VideoStreamDemo: typeof import('./pages/VideoStreamDemo.vue')['default']

@@ -108,7 +108,7 @@ export abstract class BaseConnection {
 		if (mainWindow) {
 			mainWindow.webContents.send('network:data-frame', {
 				connectionId: this._id,
-				data: Array.from(data),
+				data: data,
 			});
 		}
 	}
@@ -125,7 +125,7 @@ export abstract class BaseConnection {
 				connectionId: this._id,
 				frameId: frame.frameId,
 				timestamp: frame.timestamp,
-				data: Array.from(frame.data), // 纯数据，已移除帧头
+				data: frame.data, // 纯数据，已移除帧头
 				isKeyFrame: this.isKeyFrame(frame.data),
 			});
 		}
@@ -136,13 +136,51 @@ export abstract class BaseConnection {
 	 * @param data 帧数据
 	 */
 	private isKeyFrame(data: Buffer): boolean {
+		// if (data.length < 5) return false;
+		// // H265: NAL unit type == 19-20 (IDR)
+		// // const nalType = (data[4] >> 1) & 0x3f;
+		// // return nalType >= 16 && nalType <= 21;
+		// // H264: NAL unit type == 5 (IDR)
+		// // const nalType = (data[4] >> 1) & 0x1f;
+		// // return nalType === 5;
+		// return false;
+
 		if (data.length < 5) return false;
-		// H265: NAL unit type == 19-20 (IDR)
-		// const nalType = (data[4] >> 1) & 0x3f;
-		// return nalType >= 16 && nalType <= 21;
-		// H264: NAL unit type == 5 (IDR)
-		// const nalType = (data[4] >> 1) & 0x1f;
-		// return nalType === 5;
+
+		const len = data.length;
+		let i = 0;
+
+		while (i < len - 4) {
+			// 1. 寻找 Start Code 前缀 (00 00 01 或 00 00 00 01)
+			if (data[i] === 0 && data[i + 1] === 0) {
+				// 可能是 00 00 01 ...
+				if (data[i + 2] === 1) {
+					// 找到 Start Code，NALU Header 在 i+3
+					const naluType = data[i + 3] & 0x1f;
+					// console.log('Found NALU Type:', naluType); // 调试用
+
+					if (naluType === 5) return true; // 找到 IDR，确认为关键帧
+
+					i += 3; // 移动指针继续找下一个
+					continue;
+				}
+				// 可能是 00 00 00 01 ...
+				else if (data[i + 2] === 0 && data[i + 3] === 1) {
+					// 找到 Start Code，NALU Header 在 i+4
+					const naluType = data[i + 4] & 0x1f;
+					// console.log('Found NALU Type:', naluType); // 调试用
+
+					if (naluType === 5) return true; // 找到 IDR，确认为关键帧
+
+					i += 4; // 移动指针继续找下一个
+					continue;
+				}
+			}
+
+			// 没找到 Start Code，逐字节后移
+			i++;
+		}
+
 		return false;
 	}
 

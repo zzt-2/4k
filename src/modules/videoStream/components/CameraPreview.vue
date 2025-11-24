@@ -1,7 +1,9 @@
 <template>
 	<q-card class="camera-preview fit column no-wrap">
 		<q-card-section class="row q-py-sm col-auto items-center justify-between">
-			<div class="text-subtitle1 text-weight-bold text-primary">本地摄像头</div>
+			<div class="text-subtitle1 text-weight-bold text-primary">
+				{{ sourceType === 'camera' ? '本地摄像头' : '本地视频文件' }}
+			</div>
 			<div class="row q-gutter-sm items-center">
 				<q-btn
 					flat
@@ -16,10 +18,9 @@
 				<q-separator vertical color="accent" />
 				<q-btn
 					:color="isActive ? 'negative' : 'primary'"
-					:label="isActive ? '停止采集' : '开始采集'"
-					:icon="isActive ? 'no_photography' : 'camera_alt'"
-					@click="toggleCamera"
-					:disable="isEncoding"
+					:label="isActive ? '停止传输' : '开始传输'"
+					:icon="isActive ? 'stop' : 'play_arrow'"
+					@click="toggleCapture"
 					size="sm"
 					glossy
 				/>
@@ -33,7 +34,6 @@
 			<video
 				ref="videoRef"
 				autoplay
-				muted
 				playsinline
 				class="fit absolute-center z-top"
 				style="object-fit: contain"
@@ -76,16 +76,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useCamera } from '../composables/useCamera';
+import { useVideoFileSource } from '../composables/useVideoFileSource';
 import { useH265Encoder, type EncodedFrameData } from '../composables/useH265Encoder';
 import { useFrameManager } from '../../../core/stores/frame-manager';
+import { useStreamConfig } from '../composables/useStreamConfig';
 
-const props = defineProps<{
-	connectionId: number;
-	remoteAddress: string;
-	remotePort: number;
-}>();
+// 获取注入的配置
+const { connectionId, remoteAddress, remotePort, sourceType, selectedFile } = useStreamConfig();
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
@@ -93,7 +92,9 @@ const videoSettings = ref<MediaTrackSettings | null>(null);
 const encodedFrameCount = ref(0);
 const isFullscreen = ref(false);
 
-const { stream, videoTrack, error: cameraError, isActive, startCamera, stopCamera } = useCamera();
+const camera = useCamera();
+const videoFileSource = useVideoFileSource();
+
 const {
 	error: encoderError,
 	isEncoding,
@@ -105,24 +106,46 @@ const {
 const frameManager = useFrameManager();
 const error = ref<string | null>(null);
 
+// 当前使用的源
+const currentSource = computed(() => {
+	return sourceType.value === 'camera' ? camera : videoFileSource;
+});
+
+const isActive = computed(() => currentSource.value.isActive.value);
+
 // 合并错误信息
-watch([cameraError, encoderError], ([camErr, encErr]) => {
-	error.value = camErr || encErr;
+watch([camera.error, videoFileSource.error, encoderError], ([camErr, fileErr, encErr]) => {
+	error.value = camErr || fileErr || encErr;
 });
 
-// 当摄像头启动后，显示预览
-watch(stream, (newStream) => {
-	if (newStream && videoRef.value) {
-		videoRef.value.srcObject = newStream;
+// 监听流变化
+watch(
+	() => currentSource.value.stream.value,
+	(newStream) => {
+		if (!videoRef.value) return;
+		// 只有当源类型是摄像头时，才需要将流赋值给 video 标签进行预览
+		if (sourceType.value === 'camera') {
+			if (newStream) {
+				videoRef.value.srcObject = newStream;
+			} else {
+				videoRef.value.srcObject = null;
+			}
+		}
+		//如果是视频文件模式 (sourceType === 'video')：
+		// useVideoFileSource 内部已经设置了 videoRef.src = blobUrl 并开始播放
+		// 我们不需要在这里做任何事，否则会打断文件播放
 	}
-});
+);
 
-// 当视频轨道可用时，获取设置
-watch(videoTrack, (track) => {
-	if (track) {
-		videoSettings.value = track.getSettings();
+// 监听视频轨道变化
+watch(
+	() => currentSource.value.videoTrack.value,
+	(track) => {
+		if (track) {
+			videoSettings.value = track.getSettings();
+		}
 	}
-});
+);
 
 onMounted(() => {
 	document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -130,6 +153,7 @@ onMounted(() => {
 
 onUnmounted(() => {
 	document.removeEventListener('fullscreenchange', onFullscreenChange);
+	stopAll();
 });
 
 function onFullscreenChange() {
@@ -150,43 +174,83 @@ function toggleFullscreen() {
 	}
 }
 
-async function toggleCamera() {
-	if (isActive.value) {
-		await stopEncoding();
-		stopCamera();
-		encodedFrameCount.value = 0;
-	} else {
-		// 启动摄像头
-		await startCamera({ width: 3840, height: 2160 });
+async function stopAll() {
+	await stopEncoding();
+	camera.stopCamera();
+	videoFileSource.stop();
+	encodedFrameCount.value = 0;
+	if (videoRef.value) {
+		videoRef.value.srcObject = null;
+	}
+}
 
-		if (!videoTrack.value) {
+async function toggleCapture() {
+	if (isActive.value) {
+		await stopAll();
+		// 停止后清理
+		if (videoRef.value) {
+			videoRef.value.srcObject = null;
+			videoRef.value.removeAttribute('src');
+			videoRef.value.load();
+		}
+	} else {
+		// 启动源
+		if (sourceType.value === 'camera') {
+			if (videoRef.value) {
+				videoRef.value.srcObject = null;
+				videoRef.value.removeAttribute('src');
+				videoRef.value.load();
+			}
+			await camera.startCamera({ width: 3840, height: 2160 });
+		} else {
+			if (!selectedFile.value || !videoRef.value) {
+				error.value = '请选择视频文件';
+				return;
+			}
+			// 注意：这里我们需要先清空 srcObject，因为 useVideoFileSource 会设置 src
+			if (videoRef.value.srcObject) {
+				videoRef.value.srcObject = null;
+			}
+			await videoFileSource.start(selectedFile.value, videoRef.value);
+		}
+
+		const track = currentSource.value.videoTrack.value;
+		if (!track) {
 			error.value = '无法获取视频轨道';
 			return;
 		}
 
 		// 初始化编码器
-		const settings = videoTrack.value.getSettings();
+		const settings = track.getSettings();
+		let width = settings.width || 3840;
+		let height = settings.height || 2160;
+
+		if (width % 2 !== 0) width -= 1;
+		if (height % 2 !== 0) height -= 1;
+
 		await initEncoder(
-			settings.width || 3840,
-			settings.height || 2160,
-			5_000_000,
-			settings.frameRate || 60
+			width,
+			height,
+			50_000_000, // 码率
+			settings.frameRate || 30
 		);
 
 		// 开始编码
-		await startEncodingFromTrack(videoTrack.value, handleEncodedFrame);
+		await startEncodingFromTrack(track, handleEncodedFrame);
 	}
 }
 
 async function handleEncodedFrame(frameData: EncodedFrameData) {
+	if (connectionId.value === null) return;
+
 	encodedFrameCount.value++;
 
 	// 使用帧管理器发送视频帧
 	const result = await frameManager.sendVideoFrame(
-		props.connectionId,
+		connectionId.value,
 		frameData.data,
-		props.remoteAddress,
-		props.remotePort
+		remoteAddress.value,
+		remotePort.value
 	);
 
 	if (!result.success) {

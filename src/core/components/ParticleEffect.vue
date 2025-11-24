@@ -53,10 +53,10 @@ function spawn() {
 }
 
 onMounted(() => {
-	// 初始一批
-	for (let i = 0; i < CONFIG.amount; i++) spawn();
-	// 持续补货
-	timer = window.setInterval(spawn, CONFIG.life / CONFIG.amount);
+	// // 初始一批
+	// for (let i = 0; i < CONFIG.amount; i++) spawn();
+	// // 持续补货
+	// timer = window.setInterval(spawn, CONFIG.life / CONFIG.amount);
 });
 
 onUnmounted(() => clearInterval(timer));

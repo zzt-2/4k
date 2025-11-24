@@ -13,7 +13,7 @@ export const networkAPI = {
 
 	sendData: (params: {
 		connectionId: number;
-		data: number[];
+		data: ArrayBuffer;
 		remoteAddress?: string;
 		remotePort?: number;
 	}) => ipcRenderer.invoke('network-send-data', params),

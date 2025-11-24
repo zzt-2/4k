@@ -23,8 +23,7 @@ export function useH265Decoder() {
 			error.value = null;
 
 			// 检查 H.265 支持
-			const config: VideoDecoderConfig = {
-				// codec: 'avc1.640033', // H.264
+			let config: VideoDecoderConfig = {
 				codec: 'hvc1.1.6.L153.B0', // H.265
 				codedWidth: width,
 				codedHeight: height,
@@ -33,8 +32,15 @@ export function useH265Decoder() {
 
 			const support = await VideoDecoder.isConfigSupported(config);
 			if (!support.supported) {
-				throw new Error('H.265 解码不受支持，请安装 HEVC 视频扩展');
+				console.warn('H.265 解码不受支持，请安装 HEVC 视频扩展');
 			}
+
+			config = {
+				codec: 'avc1.640033', // H.264
+				codedWidth: width,
+				codedHeight: height,
+				hardwareAcceleration: 'no-preference', // 既然没显卡，就不要强求 prefer-hardware 了，避免浏览器反复尝试
+			};
 
 			// 创建解码器
 			decoder.value = new VideoDecoder({
@@ -106,19 +112,24 @@ export function useH265Decoder() {
 	 * @param canvas Canvas 元素
 	 */
 	function drawFrameToCanvas(videoFrame: VideoFrame, canvas: HTMLCanvasElement) {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
+		const ctx = canvas.getContext('2d', {
+			alpha: false, // 优化：关闭透明通道，稍微提升性能
+			desynchronized: true, // 优化：提示浏览器低延迟渲染
+		});
+		if (!ctx) {
+			videoFrame.close();
+			return;
+		}
 
-		// 设置 canvas 尺寸
+		// 只有尺寸变了才修改 canvas 宽高，避免导致闪烁和重绘开销
 		if (canvas.width !== videoFrame.displayWidth || canvas.height !== videoFrame.displayHeight) {
 			canvas.width = videoFrame.displayWidth;
 			canvas.height = videoFrame.displayHeight;
 		}
 
-		// 绘制帧
 		ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
 
-		// 释放帧
+		// 必须关闭！
 		videoFrame.close();
 	}
 
