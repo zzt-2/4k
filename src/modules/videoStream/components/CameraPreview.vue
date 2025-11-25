@@ -39,6 +39,7 @@
 				playsinline
 				class="fit absolute-center z-1000"
 				style="object-fit: contain"
+				@resize="updateVideoSettings"
 			></video>
 
 			<transition name="fade">
@@ -90,7 +91,7 @@ const { connectionId, remoteAddress, remotePort, sourceType, selectedFile } = us
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
-const videoSettings = ref<MediaTrackSettings | null>(null);
+const videoSettings = ref<{ width: number; height: number; frameRate?: number } | null>(null);
 const encodedFrameCount = ref(0);
 const isFullscreen = ref(false);
 
@@ -145,7 +146,12 @@ watch(
 	() => currentSource.value.videoTrack.value,
 	(track) => {
 		if (track) {
-			videoSettings.value = track.getSettings();
+			// 先尝试获取一次
+			const settings = track.getSettings();
+			// 如果宽或高缺失/为0，不要急着赋值，等待 resize 事件
+			if (settings.width && settings.height) {
+				videoSettings.value = settings;
+			}
 		}
 	}
 );
@@ -158,6 +164,21 @@ onUnmounted(() => {
 	document.removeEventListener('fullscreenchange', onFullscreenChange);
 	stopAll();
 });
+
+function updateVideoSettings() {
+	if (videoRef.value && videoRef.value.videoWidth) {
+		// 以 video 元素的实际源尺寸为准
+		videoSettings.value = {
+			width: videoRef.value.videoWidth,
+			height: videoRef.value.videoHeight,
+			// 帧率还是得从 track 拿，或者默认为 0
+			frameRate: currentSource.value.videoTrack.value?.getSettings().frameRate,
+		};
+
+		// 可选：同时更新编码器配置（如果支持动态调整）
+		// console.log('Resolution update:', videoSettings.value);
+	}
+}
 
 function onFullscreenChange() {
 	if (containerRef.value) {

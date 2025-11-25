@@ -1,7 +1,6 @@
 /**
- * 视频文件流采集 Composable
- * 负责处理视频文件播放并获取 MediaStream
- * * 修复版：内部创建离屏 Video 元素，解决大屏/小屏分辨率不一致问题
+ * useVideoFileSource.ts
+ * 视频文件流采集 Composable - 高清修复版
  */
 
 import { ref, onUnmounted } from 'vue';
@@ -12,12 +11,10 @@ export function useVideoFileSource() {
 	const error = ref<string | null>(null);
 	const isActive = ref(false);
 
-	// 内部私有变量，不依赖外部传入 DOM
 	let internalVideo: HTMLVideoElement | null = null;
 
 	/**
 	 * 启动视频文件流
-	 * @param file 视频文件
 	 */
 	async function start(file: File) {
 		try {
@@ -25,79 +22,88 @@ export function useVideoFileSource() {
 
 			// 1. 创建 Video 元素
 			internalVideo = document.createElement('video');
-			internalVideo.muted = true; // 必须静音才能自动播放
+			internalVideo.muted = true;
 			internalVideo.playsInline = true;
 			internalVideo.loop = true;
 			internalVideo.crossOrigin = 'anonymous';
 
-			// 挂载到 DOM 但隐藏，确保浏览器分配渲染资源（解决部分浏览器 captureStream 问题）
-			internalVideo.style.position = 'absolute';
-			internalVideo.style.top = '-9999px';
-			internalVideo.style.left = '-9999px';
-			internalVideo.style.width = '1px';
-			internalVideo.style.height = '1px';
+			// === 核心修复 1: 确保浏览器全分辨率渲染 ===
+			// 使用 fixed 定位而不是 absolute，防止页面滚动影响
+			internalVideo.style.position = 'fixed';
+			internalVideo.style.top = '0';
+			internalVideo.style.left = '0';
+			// 极低透明度，但不是 0，防止浏览器彻底丢弃渲染层
+			internalVideo.style.opacity = '0.01';
+			internalVideo.style.zIndex = '-9999';
+			// 关键：不设置 CSS 的 width/height 为 1px，
+			// 而是等待 metadata 加载后设置 HTML 属性
+			internalVideo.style.pointerEvents = 'none';
+
 			document.body.appendChild(internalVideo);
 
-			// 2. 创建 URL
 			const url = URL.createObjectURL(file);
 			internalVideo.src = url;
 
-			// 等待元数据加载
+			// 2. 等待元数据并锁定分辨率
 			await new Promise((resolve, reject) => {
 				if (!internalVideo) return reject(new Error('Internal video is null'));
 
-				const timeout = setTimeout(() => reject(new Error('视频元数据加载超时')), 5000);
+				const timeout = setTimeout(() => reject(new Error('视频加载超时')), 5000);
 
 				internalVideo.onloadedmetadata = () => {
 					clearTimeout(timeout);
+					if (internalVideo) {
+						// === 核心修复 2: 强制 HTML 属性等于原始视频尺寸 ===
+						// 这告诉 captureStream：“请按这个分辨率给我数据”
+						internalVideo.width = internalVideo.videoWidth;
+						internalVideo.height = internalVideo.videoHeight;
+
+						console.log(
+							`[useVideoFileSource] Source Dimensions: ${internalVideo.videoWidth}x${internalVideo.videoHeight}`
+						);
+					}
 					resolve(true);
 				};
+
 				internalVideo.onerror = () => {
 					clearTimeout(timeout);
-					reject(new Error(`视频加载失败: ${internalVideo?.error?.message || '未知错误'}`));
+					reject(new Error(`视频加载错误: ${internalVideo?.error?.message}`));
 				};
 			});
 
-			// 3. 播放并捕获流
 			try {
 				await internalVideo.play();
 			} catch (e) {
-				throw new Error(
-					'无法播放视频(可能格式不支持): ' + (e instanceof Error ? e.message : String(e))
-				);
+				throw new Error('无法播放: ' + (e instanceof Error ? e.message : String(e)));
 			}
 
-			// @ts-ignore: captureStream 在 Chrome/Electron 中可用
+			// 3. 捕获流
+			// @ts-ignore
 			const mediaStream = internalVideo.captureStream() as MediaStream;
+			if (!mediaStream) throw new Error('捕获流失败');
 
-			if (!mediaStream) {
-				throw new Error('无法从视频元素捕获流');
-			}
-
-			// 移除音频轨道
-			const audioTracks = mediaStream.getAudioTracks();
-			audioTracks.forEach((track) => track.stop());
+			// 移除音频
+			mediaStream.getAudioTracks().forEach((t) => t.stop());
 
 			stream.value = mediaStream;
 			videoTrack.value = mediaStream.getVideoTracks()[0] || null;
 			isActive.value = true;
 
+			// 再次打印确认最终轨道的设置
+			const settings = videoTrack.value?.getSettings();
 			console.log(
-				'[useVideoFileSource] Started. Resolution:',
-				videoTrack.value?.getSettings().width,
+				'[useVideoFileSource] Final Stream Settings:',
+				settings?.width,
 				'x',
-				videoTrack.value?.getSettings().height
+				settings?.height
 			);
 		} catch (err) {
-			error.value = err instanceof Error ? err.message : '视频文件启动失败';
-			console.error('[useVideoFileSource] Error:', err);
+			error.value = err instanceof Error ? err.message : '启动失败';
+			console.error('[useVideoFileSource]', err);
 			stop();
 		}
 	}
 
-	/**
-	 * 停止视频文件流
-	 */
 	function stop() {
 		if (stream.value) {
 			stream.value.getTracks().forEach((track) => track.stop());
@@ -107,13 +113,8 @@ export function useVideoFileSource() {
 
 		if (internalVideo) {
 			internalVideo.pause();
-			if (internalVideo.src) {
-				URL.revokeObjectURL(internalVideo.src);
-				internalVideo.removeAttribute('src');
-			}
+			if (internalVideo.src) URL.revokeObjectURL(internalVideo.src);
 			internalVideo.load();
-
-			// 移除 DOM 元素
 			if (internalVideo.parentNode) {
 				internalVideo.parentNode.removeChild(internalVideo);
 			}
@@ -121,10 +122,8 @@ export function useVideoFileSource() {
 		}
 
 		isActive.value = false;
-		console.log('[useVideoFileSource] Video file stream stopped');
 	}
 
-	// 组件卸载时自动停止
 	onUnmounted(() => {
 		stop();
 	});
@@ -134,7 +133,7 @@ export function useVideoFileSource() {
 		videoTrack,
 		error,
 		isActive,
-		start, // 注意：这里的 start 不需要传 videoEl 了
+		start,
 		stop,
 	};
 }
