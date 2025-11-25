@@ -253,7 +253,7 @@ async function toggleCapture() {
 		await initEncoder(
 			width,
 			height,
-			50_000_000, // 码率
+			20_000_000, // 码率
 			settings.frameRate || 30
 		);
 

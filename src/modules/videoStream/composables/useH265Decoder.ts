@@ -10,6 +10,7 @@ export function useH265Decoder() {
 	const isDecoding = ref(false);
 	const error = ref<string | null>(null);
 
+	let currentConfig: VideoDecoderConfig | null = null;
 	let pendingFrame: VideoFrame | null = null;
 	let renderLoopId: number | null = null;
 	let canvasRef: HTMLCanvasElement | null = null;
@@ -66,6 +67,7 @@ export function useH265Decoder() {
 			});
 
 			decoder.value.configure(config);
+			currentConfig = config;
 			isDecoding.value = true;
 
 			console.log('[useH265Decoder] Decoder initialized:', config);
@@ -79,6 +81,21 @@ export function useH265Decoder() {
 	 * 处理解码后的视频帧
 	 */
 	function handleDecodedFrame(videoFrame: VideoFrame) {
+		if (
+			currentConfig &&
+			(videoFrame.codedWidth !== currentConfig.codedWidth ||
+				videoFrame.codedHeight !== currentConfig.codedHeight)
+		) {
+			// 更新记录
+			currentConfig.codedWidth = videoFrame.codedWidth;
+			currentConfig.codedHeight = videoFrame.codedHeight;
+
+			// 重新配置解码器（WebCodecs 允许动态 configure）
+			if (decoder.value && decoder.value.state === 'configured') {
+				decoder.value.configure(currentConfig);
+				console.log('[useH265Decoder] Decoder reconfigured:', currentConfig);
+			}
+		}
 		if (onDecodedFrameCallback) {
 			onDecodedFrameCallback(videoFrame);
 		} else {
