@@ -3,7 +3,7 @@
 		class="flex h-full overflow-hidden bg-[var(--bg-primary)] font-mono text-[var(--text-primary)]"
 	>
 		<div
-			class="no-wrap flex h-full w-70 flex-col border-r border-[var(--border)] bg-[var(--bg-secondary)]"
+			class="no-wrap flex h-full w-70 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--bg-secondary)]"
 		>
 			<div class="border-b border-[var(--border)] px-3 py-1">
 				<div class="flex items-center gap-2 text-lg font-bold tracking-widest">
