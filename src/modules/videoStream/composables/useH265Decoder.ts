@@ -37,14 +37,13 @@ export function useH265Decoder() {
 			const support = await VideoDecoder.isConfigSupported(config);
 			if (!support.supported) {
 				console.warn('H.265 解码不受支持，请安装 HEVC 视频扩展');
+				config = {
+					codec: 'avc1.420033', // H.264
+					codedWidth: Math.min(width, 1920),
+					codedHeight: Math.min(height, 1080),
+					hardwareAcceleration: 'no-preference', // 既然没显卡，就不要强求 prefer-hardware 了，避免浏览器反复尝试
+				};
 			}
-
-			config = {
-				codec: 'avc1.420033', // H.264
-				codedWidth: Math.min(width, 1920),
-				codedHeight: Math.min(height, 1080),
-				hardwareAcceleration: 'no-preference', // 既然没显卡，就不要强求 prefer-hardware 了，避免浏览器反复尝试
-			};
 
 			// 创建解码器
 			decoder.value = new VideoDecoder({

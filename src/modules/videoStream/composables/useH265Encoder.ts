@@ -56,18 +56,17 @@ export function useH265Encoder() {
 			const support = await VideoEncoder.isConfigSupported(config);
 			if (!support.supported) {
 				console.warn('H.265 编码器不支持当前配置');
+				config = {
+					codec: 'avc1.420033',
+					avc: { format: 'annexb' },
+					width: Math.min(width, 1920),
+					height: Math.min(height, 1080),
+					bitrate,
+					framerate,
+					latencyMode: 'realtime',
+					hardwareAcceleration: 'no-preference',
+				};
 			}
-
-			config = {
-				codec: 'avc1.420033',
-				avc: { format: 'annexb' },
-				width: Math.min(width, 1920),
-				height: Math.min(height, 1080),
-				bitrate,
-				framerate,
-				latencyMode: 'realtime',
-				hardwareAcceleration: 'no-preference',
-			};
 
 			// 创建编码器
 			encoder.value = new VideoEncoder({
