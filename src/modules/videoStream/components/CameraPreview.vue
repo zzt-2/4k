@@ -120,23 +120,23 @@ watch([camera.error, videoFileSource.error, encoderError], ([camErr, fileErr, en
 	error.value = camErr || fileErr || encErr;
 });
 
-// 监听流变化
+// 监听流变化 (统一处理 Camera 和 VideoFile)
 watch(
 	() => currentSource.value.stream.value,
 	(newStream) => {
 		if (!videoRef.value) return;
-		// 只有当源类型是摄像头时，才需要将流赋值给 video 标签进行预览
-		if (sourceType.value === 'camera') {
-			if (newStream) {
-				videoRef.value.srcObject = newStream;
-			} else {
-				videoRef.value.srcObject = null;
-			}
+
+		// 以前只处理 camera，现在统一处理
+		// 因为 useVideoFileSource 现在返回流，而不是操作 DOM
+		if (newStream) {
+			videoRef.value.srcObject = newStream;
+			// 确保静音，避免预览产生回音（如果是带音频的文件）
+			videoRef.value.muted = true;
+		} else {
+			videoRef.value.srcObject = null;
 		}
+
 		error.value = null;
-		//如果是视频文件模式 (sourceType === 'video')：
-		// useVideoFileSource 内部已经设置了 videoRef.src = blobUrl 并开始播放
-		// 我们不需要在这里做任何事，否则会打断文件播放
 	}
 );
 
@@ -193,8 +193,6 @@ async function toggleCapture() {
 		// 停止后清理
 		if (videoRef.value) {
 			videoRef.value.srcObject = null;
-			videoRef.value.removeAttribute('src');
-			videoRef.value.load();
 		}
 	} else {
 		// 启动源
@@ -214,7 +212,7 @@ async function toggleCapture() {
 			if (videoRef.value.srcObject) {
 				videoRef.value.srcObject = null;
 			}
-			await videoFileSource.start(selectedFile.value, videoRef.value);
+			await videoFileSource.start(selectedFile.value);
 		}
 
 		const track = currentSource.value.videoTrack.value;

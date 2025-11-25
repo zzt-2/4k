@@ -18,7 +18,7 @@
 				<button
 					v-for="mode in modes"
 					:key="mode.value"
-					@click="currentMode = mode.value"
+					@click="currentMode = mode.value as Mode"
 					class="py-1 text-xs transition-colors hover:text-[var(--accent)]"
 					:class="{
 						'bg-[var(--accent)] font-bold text-[var(--bg-secondary)] hover:text-[var(--text-primary)]':
