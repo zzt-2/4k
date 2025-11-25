@@ -56,7 +56,7 @@
 				:class="currentMode === 'loopback' ? 'grid-cols-2' : 'grid-cols-1'"
 			>
 				<div v-show="showLocal" class="sys-video-box">
-					<CameraPreview ref="localVideo" class="fit" />
+					<CameraPreview class="fit" />
 				</div>
 
 				<div v-show="showRemote" class="sys-video-box">
@@ -67,7 +67,7 @@
 						<div class="text-xs tracking-widest">NO SIGNAL</div>
 					</div>
 
-					<RemoteVideoDisplay ref="remoteVideo" class="fit" />
+					<RemoteVideoDisplay class="fit" />
 				</div>
 			</div>
 		</div>

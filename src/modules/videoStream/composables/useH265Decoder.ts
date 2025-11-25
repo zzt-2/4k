@@ -27,16 +27,27 @@ export function useH265Decoder() {
 			error.value = null;
 
 			// 检查 H.265 支持
+			const baseConfig: VideoEncoderConfig = {
+				codec: 'hvc1.1.6.L153.B0', // H.265
+				// @ts-ignore: TS定义缺失，但运行时支持
+				hevc: { format: 'annexb' },
+				width: 3840,
+				height: 2160,
+				bitrate: 50_000_000,
+				framerate: 60,
+				hardwareAcceleration: 'prefer-hardware',
+			};
+
+			const support = await VideoEncoder.isConfigSupported(baseConfig);
+
 			let config: VideoDecoderConfig = {
 				codec: 'hvc1.1.6.L153.B0', // H.265
 				codedWidth: width,
 				codedHeight: height,
 				hardwareAcceleration: 'prefer-hardware',
 			};
-
-			const support = await VideoDecoder.isConfigSupported(config);
 			if (!support.supported) {
-				console.warn('H.265 解码不受支持，请安装 HEVC 视频扩展');
+				console.warn('H.265 解码不受支持');
 				config = {
 					codec: 'avc1.420033', // H.264
 					codedWidth: Math.min(width, 1920),

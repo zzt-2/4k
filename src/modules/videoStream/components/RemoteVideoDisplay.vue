@@ -4,6 +4,17 @@
 			<div class="text-subtitle1 text-weight-bold my-text-secondary">远程视频</div>
 			<div class="row q-gutter-sm items-center">
 				<q-btn
+					unelevated
+					size="sm"
+					:color="isActive ? 'negative' : 'primary'"
+					:label="isActive ? '停止接收' : '开始接收'"
+					:icon="isActive ? 'stop' : 'play_arrow'"
+					@click="toggleReceive"
+					glossy
+				>
+					<q-tooltip>{{ isActive ? '停止接收视频' : '开始接收视频' }}</q-tooltip>
+				</q-btn>
+				<q-btn
 					flat
 					round
 					dense
@@ -80,6 +91,7 @@ const containerRef = ref<HTMLElement | null>(null);
 const receivedFrameCount = ref(0);
 const fps = ref(0);
 const error = ref<string | null>(null);
+const isActive = ref(false);
 const isFullscreen = ref(false);
 
 const {
@@ -95,22 +107,40 @@ const frameManager = useFrameManager();
 let unsubscribe: (() => void) | null = null;
 let frameTimestamps: number[] = [];
 
-onMounted(async () => {
-	// 初始化解码器
-	await initDecoder(3840, 2160);
+function toggleReceive() {
+	isActive.value = !isActive.value;
+}
 
-	// 设置解码帧回调
-	onDecodedFrame((videoFrame) => {
-		if (canvasRef.value) {
-			drawFrameToCanvas(videoFrame, canvasRef.value);
+watch(
+	() => isActive.value,
+	async (newIsActive) => {
+		if (newIsActive) {
+			// 初始化解码器
+			await initDecoder(3840, 2160);
+
+			// 设置解码帧回调
+			onDecodedFrame((videoFrame) => {
+				if (canvasRef.value) {
+					drawFrameToCanvas(videoFrame, canvasRef.value);
+				}
+			});
+
+			// 使用帧管理器监听视频帧
+			unsubscribe = frameManager.onVideoFrame(handleReceivedFrame);
+
+			document.addEventListener('fullscreenchange', onFullscreenChange);
+		} else {
+			if (unsubscribe) {
+				unsubscribe();
+				unsubscribe = null;
+			}
+			// 清空统计
+			receivedFrameCount.value = 0;
+			fps.value = 0;
+			frameTimestamps = [];
 		}
-	});
-
-	// 使用帧管理器监听视频帧
-	unsubscribe = frameManager.onVideoFrame(handleReceivedFrame);
-
-	document.addEventListener('fullscreenchange', onFullscreenChange);
-});
+	}
+);
 
 onUnmounted(() => {
 	if (unsubscribe) {

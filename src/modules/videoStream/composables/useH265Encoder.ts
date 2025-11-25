@@ -46,16 +46,16 @@ export function useH265Encoder() {
 				codec: 'hvc1.1.6.L153.B0', // H.265
 				// @ts-ignore: TS定义缺失，但运行时支持
 				hevc: { format: 'annexb' },
-				width,
-				height,
-				bitrate,
-				framerate,
+				width: 3840,
+				height: 2160,
+				bitrate: 50_000_000,
+				framerate: 60,
 				hardwareAcceleration: 'prefer-hardware',
 			};
 
 			const support = await VideoEncoder.isConfigSupported(config);
 			if (!support.supported) {
-				console.warn('H.265 编码器不支持当前配置');
+				console.warn('H.265 编码器不支持');
 				config = {
 					codec: 'avc1.420033',
 					avc: { format: 'annexb' },
@@ -79,7 +79,7 @@ export function useH265Encoder() {
 
 			encoder.value.configure(config);
 			isEncoding.value = true;
-			frameRate.value = framerate;
+			frameRate.value = Math.round(framerate);
 
 			console.log('[useH265Encoder] Encoder initialized:', config);
 		} catch (err) {

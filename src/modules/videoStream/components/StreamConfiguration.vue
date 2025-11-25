@@ -85,17 +85,15 @@
 					</template>
 				</q-file>
 
-				<div class="flex w-full gap-2">
-					<q-btn
-						unelevated
-						size="sm"
-						class="w-full px-4"
-						@click="connectionId !== null ? closeConnection() : createConnection()"
-						:color="connectionId !== null ? 'warning' : 'accent'"
-					>
-						<span>{{ connectionId !== null ? '断开连接' : '建立连接' }}</span>
-					</q-btn>
-				</div>
+				<q-btn
+					unelevated
+					size="sm"
+					class="w-full px-4"
+					@click="connectionId !== null ? closeConnection() : createConnection()"
+					:color="connectionId !== null ? 'warning' : 'accent'"
+				>
+					<span>{{ connectionId !== null ? '断开连接' : '建立连接' }}</span>
+				</q-btn>
 			</div>
 		</q-card>
 	</div>

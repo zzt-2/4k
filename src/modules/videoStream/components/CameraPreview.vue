@@ -6,6 +6,17 @@
 			</div>
 			<div class="row q-gutter-sm items-center">
 				<q-btn
+					unelevated
+					size="sm"
+					:color="isActive ? 'negative' : 'primary'"
+					:label="isActive ? '停止发送' : '开始发送'"
+					:icon="isActive ? 'stop' : 'play_arrow'"
+					@click="toggleCapture"
+					glossy
+				>
+					<q-tooltip>{{ isActive ? '停止视频发送' : '开始视频发送' }}</q-tooltip>
+				</q-btn>
+				<q-btn
 					flat
 					round
 					dense
@@ -15,15 +26,6 @@
 				>
 					<q-tooltip>{{ isFullscreen ? '退出全屏' : '全屏' }}</q-tooltip>
 				</q-btn>
-				<q-separator vertical color="accent" />
-				<q-btn
-					:color="isActive ? 'negative' : 'primary'"
-					:label="isActive ? '停止传输' : '开始传输'"
-					:icon="isActive ? 'stop' : 'play_arrow'"
-					@click="toggleCapture"
-					size="sm"
-					glossy
-				/>
 			</div>
 		</q-card-section>
 
@@ -131,6 +133,7 @@ watch(
 				videoRef.value.srcObject = null;
 			}
 		}
+		error.value = null;
 		//如果是视频文件模式 (sourceType === 'video')：
 		// useVideoFileSource 内部已经设置了 videoRef.src = blobUrl 并开始播放
 		// 我们不需要在这里做任何事，否则会打断文件播放
