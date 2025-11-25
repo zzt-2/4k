@@ -10,7 +10,7 @@ import {
 } from '../../../../src/core/types/protocol';
 
 // video-frame 的固定帧头大小
-export const VIDEO_FRAME_HEADER_SIZE = 12;
+export const VIDEO_FRAME_HEADER_SIZE = 10;
 
 /**
  * 帧头结构（仅用于 video-frame）
@@ -24,13 +24,11 @@ export interface VideoFrameHeader {
 	packetIndex: number;
 	/** 总分片数 */
 	totalPackets: number;
-	/** 时间戳 (毫秒) */
-	timestamp: number;
 }
 
 /**
  * 从 Buffer 解析帧头（仅用于 video-frame）
- * @param buffer 包含帧头的 Buffer（至少 12 字节）
+ * @param buffer 包含帧头的 Buffer（至少 18 字节）
  * @returns 解析后的帧头对象
  */
 export function parseFrameHeader(buffer: Buffer): VideoFrameHeader {
@@ -52,7 +50,6 @@ export function parseFrameHeader(buffer: Buffer): VideoFrameHeader {
 		frameId: buffer.readUInt16BE(4),
 		packetIndex: buffer.readUInt16BE(6),
 		totalPackets: buffer.readUInt16BE(8),
-		timestamp: buffer.readUInt16BE(10),
 	};
 }
 
@@ -61,14 +58,12 @@ export function parseFrameHeader(buffer: Buffer): VideoFrameHeader {
  * @param frameId 帧 ID
  * @param packetIndex 分片序号
  * @param totalPackets 总分片数
- * @param timestamp 时间戳
- * @returns 12 字节的 Buffer
+ * @returns 18 字节的 Buffer
  */
 export function createFrameHeader(
 	frameId: number,
 	packetIndex: number,
-	totalPackets: number,
-	timestamp: number
+	totalPackets: number
 ): Buffer {
 	const buffer = Buffer.allocUnsafe(VIDEO_FRAME_HEADER_SIZE);
 
@@ -76,7 +71,6 @@ export function createFrameHeader(
 	buffer.writeUInt16BE(frameId & 0xffff, 4);
 	buffer.writeUInt16BE(packetIndex & 0xffff, 6);
 	buffer.writeUInt16BE(totalPackets & 0xffff, 8);
-	buffer.writeUInt16BE(timestamp & 0xffff, 10);
 
 	return buffer;
 }

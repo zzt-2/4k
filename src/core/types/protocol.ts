@@ -10,7 +10,7 @@ export interface FrameField {
 	/** 字段名称 */
 	name: string;
 	/** 字段类型 */
-	type: 'uint8' | 'uint16' | 'uint32' | 'string' | 'buffer';
+	type: 'uint8' | 'uint16' | 'uint32' | 'uint64' | 'string' | 'buffer';
 	/** 字段长度（字节），-1 表示可变长度 */
 	length: number;
 	/** 字段值（用于组帧时） */
@@ -56,7 +56,6 @@ export const FRAME_DEFINITIONS = {
 			{ name: 'magic', type: 'uint32', length: 4, description: '帧头标志' },
 			{ name: 'fps', type: 'uint16', length: 2, description: '帧率' },
 			{ name: 'bitrate', type: 'uint32', length: 4, description: '码率(kbps)' },
-			{ name: 'latency', type: 'uint16', length: 2, description: '延迟(ms)' },
 			{ name: 'droppedFrames', type: 'uint16', length: 2, description: '丢帧数' },
 		],
 	},
@@ -101,8 +100,6 @@ export interface ParsedFrame {
 	definition: FrameDefinition;
 	/** 帧 ID */
 	frameId: number;
-	/** 时间戳 */
-	timestamp: number;
 	/** 纯数据（已移除帧头） */
 	data: Uint8Array;
 	/** 是否为关键帧（仅 video-frame） */

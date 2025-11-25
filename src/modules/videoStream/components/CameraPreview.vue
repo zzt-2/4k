@@ -1,7 +1,7 @@
 <template>
 	<q-card class="camera-preview fit column no-wrap">
 		<q-card-section class="row q-py-sm col-auto items-center justify-between">
-			<div class="text-subtitle1 text-weight-bold text-primary">
+			<div class="text-subtitle1 text-weight-bold my-text-secondary">
 				{{ sourceType === 'camera' ? '本地摄像头' : '本地视频文件' }}
 			</div>
 			<div class="row q-gutter-sm items-center">
@@ -35,7 +35,7 @@
 				ref="videoRef"
 				autoplay
 				playsinline
-				class="fit absolute-center z-top"
+				class="fit absolute-center z-1000"
 				style="object-fit: contain"
 			></video>
 
@@ -53,7 +53,7 @@
 			<transition name="slide-up">
 				<div
 					v-if="isActive"
-					class="absolute-bottom q-pa-sm bg-dark-transparent text-caption text-white backdrop-blur"
+					class="absolute-bottom q-pa-sm z-top bg-dark-transparent text-caption text-white backdrop-blur"
 				>
 					<div class="row q-gutter-x-lg items-center justify-center">
 						<div class="row q-gutter-x-xs items-center">
@@ -62,7 +62,7 @@
 						</div>
 						<div class="row q-gutter-x-xs items-center">
 							<q-icon name="speed" color="secondary" />
-							<span>{{ videoSettings?.frameRate }} fps</span>
+							<span>帧率：{{ Math.round(videoSettings?.frameRate || 0) }} fps</span>
 						</div>
 						<div class="row q-gutter-x-xs items-center">
 							<q-icon name="analytics" color="primary" />
@@ -261,7 +261,7 @@ async function handleEncodedFrame(frameData: EncodedFrameData) {
 
 <style scoped>
 .camera-preview {
-	min-height: 500px;
+	min-height: 300px;
 	border: 1px solid var(--accent);
 	box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
 }

@@ -7,14 +7,14 @@ import { createFrameHeader, VIDEO_FRAME_HEADER_SIZE } from './protocol';
 
 /**
  * MTU 大小 (字节)
- * 协议头 12 字节 + 数据 1388 字节 = 1400 字节
+ * 协议头 18 字节 + 数据 1382 字节 = 1400 字节
  */
 export const MTU = 1400;
 
 /**
  * 每个分片的最大数据大小 (字节)
  */
-export const MAX_PACKET_DATA_SIZE = MTU - VIDEO_FRAME_HEADER_SIZE; // 1388 字节
+export const MAX_PACKET_DATA_SIZE = MTU - VIDEO_FRAME_HEADER_SIZE; // 1382 字节
 
 /**
  * 判断数据是否需要分片
@@ -46,7 +46,7 @@ export function fragmentFrame(frameData: Buffer, frameId: number): Buffer[] {
 			frameId & 0xffff, // 确保在 0-65535 范围内
 			i, // packetIndex
 			totalPackets,
-			Date.now() & 0xffff // 使用当前时间戳
+			BigInt(Date.now()) // 使用当前时间戳
 		);
 
 		// 组合帧头和数据

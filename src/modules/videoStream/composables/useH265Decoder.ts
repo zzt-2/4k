@@ -10,6 +10,10 @@ export function useH265Decoder() {
 	const isDecoding = ref(false);
 	const error = ref<string | null>(null);
 
+	let pendingFrame: VideoFrame | null = null;
+	let renderLoopId: number | null = null;
+	let canvasRef: HTMLCanvasElement | null = null;
+
 	// 解码帧回调
 	let onDecodedFrameCallback: ((videoFrame: VideoFrame) => void) | null = null;
 
@@ -36,9 +40,9 @@ export function useH265Decoder() {
 			}
 
 			config = {
-				codec: 'avc1.640033', // H.264
-				codedWidth: width,
-				codedHeight: height,
+				codec: 'avc1.420033', // H.264
+				codedWidth: Math.min(width, 1920),
+				codedHeight: Math.min(height, 1080),
 				hardwareAcceleration: 'no-preference', // 既然没显卡，就不要强求 prefer-hardware 了，避免浏览器反复尝试
 			};
 
@@ -79,7 +83,7 @@ export function useH265Decoder() {
 	 * @param timestamp 时间戳
 	 * @param isKeyFrame 是否为关键帧
 	 */
-	function decodeChunk(data: Uint8Array, timestamp: number, isKeyFrame: boolean = false) {
+	function decodeChunk(data: Uint8Array, isKeyFrame: boolean = false) {
 		if (!decoder.value || !isDecoding.value) {
 			console.warn('[useH265Decoder] Decoder not initialized');
 			return;
@@ -88,7 +92,7 @@ export function useH265Decoder() {
 		try {
 			const chunk = new EncodedVideoChunk({
 				type: isKeyFrame ? 'key' : 'delta',
-				timestamp,
+				timestamp: Date.now(),
 				data,
 			});
 
@@ -112,25 +116,57 @@ export function useH265Decoder() {
 	 * @param canvas Canvas 元素
 	 */
 	function drawFrameToCanvas(videoFrame: VideoFrame, canvas: HTMLCanvasElement) {
-		const ctx = canvas.getContext('2d', {
-			alpha: false, // 优化：关闭透明通道，稍微提升性能
-			desynchronized: true, // 优化：提示浏览器低延迟渲染
-		});
-		if (!ctx) {
-			videoFrame.close();
+		// 1. 保存 Canvas 引用
+		canvasRef = canvas;
+
+		// 2. 如果已经有待绘制的帧，说明上一帧还没画出去又来了一帧
+		// 这时候直接丢弃上一帧（因为它已经过时了），只保留最新的
+		if (pendingFrame) {
+			pendingFrame.close();
+		}
+
+		// 3. 保存当前帧为待绘制帧
+		pendingFrame = videoFrame;
+
+		// 4. 启动渲染循环（如果还没启动）
+		if (!renderLoopId) {
+			renderLoopId = requestAnimationFrame(renderLoop);
+		}
+	}
+
+	// 独立的渲染循环函数
+	function renderLoop() {
+		if (!pendingFrame || !canvasRef) {
+			renderLoopId = null; // 没有帧了，停止循环
 			return;
 		}
 
-		// 只有尺寸变了才修改 canvas 宽高，避免导致闪烁和重绘开销
-		if (canvas.width !== videoFrame.displayWidth || canvas.height !== videoFrame.displayHeight) {
-			canvas.width = videoFrame.displayWidth;
-			canvas.height = videoFrame.displayHeight;
+		const frame = pendingFrame;
+		pendingFrame = null; // 清空引用，准备接下一帧
+
+		const ctx = canvasRef.getContext('2d', {
+			alpha: false,
+			desynchronized: true, // 关键：低延迟模式
+		});
+
+		if (ctx) {
+			// 只有当内部尺寸不匹配时才调整，减少重排
+			if (canvasRef.width !== frame.displayWidth || canvasRef.height !== frame.displayHeight) {
+				canvasRef.width = frame.displayWidth;
+				canvasRef.height = frame.displayHeight;
+			}
+			ctx.drawImage(frame, 0, 0, canvasRef.width, canvasRef.height);
 		}
 
-		ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
+		// 画完一定要关闭！
+		frame.close();
 
-		// 必须关闭！
-		videoFrame.close();
+		// 继续下一轮渲染
+		// 注意：这里我们不需要立即 requestAnimationFrame，
+		// 而是等待 drawFrameToCanvas 再次触发时判断。
+		// 但为了保持动画连贯性，通常有两种写法。
+		// 针对你的场景，"有新帧才画"是更省资源的。
+		renderLoopId = null;
 	}
 
 	/**
@@ -141,6 +177,14 @@ export function useH265Decoder() {
 			await decoder.value.flush();
 			decoder.value.close();
 			decoder.value = null;
+		}
+		if (pendingFrame) {
+			pendingFrame.close();
+			pendingFrame = null;
+		}
+		if (renderLoopId) {
+			cancelAnimationFrame(renderLoopId);
+			renderLoopId = null;
 		}
 		isDecoding.value = false;
 		onDecodedFrameCallback = null;

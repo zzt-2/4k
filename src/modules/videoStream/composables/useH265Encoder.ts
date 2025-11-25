@@ -59,10 +59,10 @@ export function useH265Encoder() {
 			}
 
 			config = {
-				codec: 'avc1.640033',
+				codec: 'avc1.420033',
 				avc: { format: 'annexb' },
-				width,
-				height,
+				width: Math.min(width, 1920),
+				height: Math.min(height, 1080),
 				bitrate,
 				framerate,
 				latencyMode: 'realtime',

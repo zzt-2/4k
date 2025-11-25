@@ -121,6 +121,15 @@ function createFrameManager() {
 				buffer[offset + 2] = (value >> 8) & 0xff;
 				buffer[offset + 3] = value & 0xff;
 				break;
+			case 'uint64':
+				buffer[offset] = (value >> 56) & 0xff;
+				buffer[offset + 1] = (value >> 48) & 0xff;
+				buffer[offset + 2] = (value >> 40) & 0xff;
+				buffer[offset + 3] = (value >> 32) & 0xff;
+				buffer[offset + 4] = (value >> 24) & 0xff;
+				buffer[offset + 5] = (value >> 16) & 0xff;
+				buffer[offset + 6] = (value >> 8) & 0xff;
+				buffer[offset + 7] = value & 0xff;
 			case 'string':
 				const encoder = new TextEncoder();
 				const encoded = encoder.encode(value);
@@ -161,7 +170,6 @@ function createFrameManager() {
 			connectionId: 0, // 将由调用者设置
 			definition,
 			frameId: 0,
-			timestamp: Date.now(),
 			fields: fieldValues,
 		};
 	};
@@ -181,6 +189,17 @@ function createFrameManager() {
 					(buffer[offset + 1] << 16) |
 					(buffer[offset + 2] << 8) |
 					buffer[offset + 3]
+				);
+			case 'uint64':
+				return (
+					(buffer[offset] << 56) |
+					(buffer[offset + 1] << 48) |
+					(buffer[offset + 2] << 40) |
+					(buffer[offset + 3] << 32) |
+					(buffer[offset + 4] << 24) |
+					(buffer[offset + 5] << 16) |
+					(buffer[offset + 6] << 8) |
+					buffer[offset + 7]
 				);
 			case 'string':
 				const decoder = new TextDecoder();
@@ -357,7 +376,6 @@ function createFrameManager() {
 					connectionId: frame.connectionId,
 					definition: FRAME_DEFINITIONS.VIDEO_FRAME,
 					frameId: frame.frameId,
-					timestamp: frame.timestamp,
 					data: new Uint8Array(frame.data),
 					isKeyFrame: frame.isKeyFrame,
 				};

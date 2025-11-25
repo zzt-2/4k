@@ -1,127 +1,104 @@
 <template>
-	<q-card class="q-mb-md">
-		<q-card-section>
-			<div class="text-h6 q-mb-md">配置</div>
-
-			<!-- 网络配置 -->
-			<div class="text-subtitle2 q-mb-sm text-grey-7">网络设置</div>
-			<div class="row q-col-gutter-sm q-mb-md">
-				<div class="col-12">
-					<q-input v-model="localAddress" label="本地地址" placeholder="127.0.0.1" outlined dense />
+	<div class="flex flex-col gap-2 font-sans text-[var(--text-primary)]">
+		<q-card>
+			<div class="mb-3 flex items-center justify-between border-b border-[var(--border)]/50 pb-1">
+				<div class="flex items-center gap-2 text-sm font-bold tracking-wide">
+					<q-icon name="settings" size="xs" class="text-[var(--accent)]" />
+					连接配置
 				</div>
-				<div class="col-12">
-					<q-input
-						v-model.number="localPort"
-						label="本地端口"
-						placeholder="8888"
-						type="number"
-						outlined
-						dense
-					/>
-				</div>
-				<div class="col-12">
-					<q-input
-						v-model="remoteAddress"
-						label="远程地址"
-						placeholder="127.0.0.1"
-						outlined
-						dense
-					/>
-				</div>
-				<div class="col-12">
-					<q-input
-						v-model.number="remotePort"
-						label="远程端口"
-						placeholder="8888"
-						type="number"
-						outlined
-						dense
-					/>
-				</div>
+				<div class="font-mono text-[10px] text-[var(--text-secondary)] opacity-60">NET.CONFIG</div>
 			</div>
 
-			<!-- 连接控制 -->
-			<div class="row q-gutter-sm q-mb-lg">
-				<q-btn
-					color="primary"
-					label="创建 UDP 连接"
-					icon="mdi-connection"
-					@click="createConnection"
-					:disable="connectionId !== null"
-					class="col-grow"
+			<div class="mb-3 grid grid-cols-2 gap-x-3 gap-y-2">
+				<q-input
+					v-model="localAddress"
+					label="本地地址"
+					dense
+					outlined
+					class="font-mono text-xs"
+					input-class="text-xs"
 				/>
-				<q-btn
-					color="negative"
-					label="断开连接"
-					icon="mdi-close-network"
-					@click="closeConnection"
-					:disable="connectionId === null"
-					class="col-grow"
+				<q-input
+					v-model.number="localPort"
+					label="本地端口"
+					type="number"
+					dense
+					outlined
+					class="font-mono text-xs"
+					input-class="text-xs"
+				/>
+				<q-input
+					v-model="remoteAddress"
+					label="远程地址"
+					dense
+					outlined
+					class="font-mono text-xs"
+					input-class="text-xs"
+				/>
+				<q-input
+					v-model.number="remotePort"
+					label="远程端口"
+					type="number"
+					dense
+					outlined
+					class="font-mono text-xs"
+					input-class="text-xs"
 				/>
 			</div>
 
-			<q-separator class="q-mb-md" />
+			<div class="flex w-full flex-col gap-3">
+				<div
+					class="my-border-default flex items-center justify-between gap-3 bg-[var(--bg-tertiary)]/50 p-2"
+				>
+					<div class="my-text-secondary text-xs">视频源选择</div>
+					<q-radio
+						v-model="sourceType"
+						val="camera"
+						label="摄像头"
+						dense
+						size="xs"
+						color="accent"
+						class="text-xs"
+					/>
+					<q-radio
+						v-model="sourceType"
+						val="video"
+						label="文件"
+						dense
+						size="xs"
+						color="accent"
+						class="text-xs"
+					/>
+				</div>
 
-			<!-- 视频源配置 -->
-			<div class="text-subtitle2 q-mb-sm text-grey-7">视频源设置</div>
-			<div class="q-gutter-sm q-mb-md">
-				<q-radio v-model="sourceType" val="camera" label="摄像头" dense />
-				<q-radio v-model="sourceType" val="video" label="视频文件" dense />
-			</div>
-
-			<!-- 文件选择 -->
-			<div v-if="sourceType === 'video'" class="q-mb-md">
-				<q-file v-model="selectedFile" label="选择视频文件" outlined dense accept="video/*">
+				<q-file
+					v-model="selectedFile"
+					v-if="sourceType === 'video'"
+					label="选择视频文件"
+					outlined
+					dense
+					input-class="text-xs"
+					accept="video/*"
+				>
 					<template v-slot:prepend>
-						<q-icon name="movie" />
+						<q-icon name="folder" size="xs" color="accent" />
 					</template>
 				</q-file>
+
+				<div class="flex w-full gap-2">
+					<q-btn
+						unelevated
+						size="sm"
+						class="w-full px-4"
+						@click="connectionId !== null ? closeConnection() : createConnection()"
+						:color="connectionId !== null ? 'warning' : 'accent'"
+					>
+						<span>{{ connectionId !== null ? '断开连接' : '建立连接' }}</span>
+					</q-btn>
+				</div>
 			</div>
-		</q-card-section>
-	</q-card>
-
-	<!-- 连接状态 -->
-	<q-card v-if="connectionStatus" class="q-mb-md">
-		<q-card-section>
-			<div class="text-h6 q-mb-sm">连接状态</div>
-			<q-list dense>
-				<q-item>
-					<q-item-section>
-						<q-item-label caption>连接 ID</q-item-label>
-						<q-item-label>{{ connectionId }}</q-item-label>
-					</q-item-section>
-				</q-item>
-				<q-item>
-					<q-item-section>
-						<q-item-label caption>状态</q-item-label>
-						<q-item-label>
-							<q-badge
-								:color="connectionStatus.status?.state === 'connected' ? 'positive' : 'grey'"
-							>
-								{{ connectionStatus.status?.state }}
-							</q-badge>
-						</q-item-label>
-					</q-item-section>
-				</q-item>
-				<q-item>
-					<q-item-section>
-						<q-item-label caption>已发送</q-item-label>
-						<q-item-label>{{ connectionStatus.status?.bytesSent }} 字节</q-item-label>
-					</q-item-section>
-				</q-item>
-				<q-item>
-					<q-item-section>
-						<q-item-label caption>已接收</q-item-label>
-						<q-item-label>{{ connectionStatus.status?.bytesReceived }} 字节</q-item-label>
-					</q-item-section>
-				</q-item>
-			</q-list>
-		</q-card-section>
-	</q-card>
-
-	<q-banner v-if="networkError" class="bg-negative q-mb-md rounded-borders text-white">
-		{{ networkError }}
-	</q-banner>
+		</q-card>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -141,3 +118,5 @@ const {
 	closeConnection,
 } = useStreamConfig();
 </script>
+
+<style scoped></style>

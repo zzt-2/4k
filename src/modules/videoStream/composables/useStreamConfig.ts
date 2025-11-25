@@ -24,30 +24,10 @@ export interface StreamConfigState {
 	networkError: string | null;
 }
 
-// Composable 返回类型
-export interface StreamConfigReturn {
-	// 状态 (Refs)
-	localAddress: import('vue').Ref<string>;
-	localPort: import('vue').Ref<number>;
-	remoteAddress: import('vue').Ref<string>;
-	remotePort: import('vue').Ref<number>;
-	sourceType: import('vue').Ref<'camera' | 'video'>;
-	selectedFile: import('vue').Ref<File | null>;
-	connectionId: import('vue').Ref<number | null>;
-	connectionStatus: import('vue').Ref<any>;
-	networkError: import('vue').Ref<string | null>;
+export type StreamConfig = ReturnType<typeof createStreamConfig>;
+const STREAM_CONFIG_KEY: InjectionKey<StreamConfig> = Symbol('stream-config');
 
-	// 操作
-	createConnection: () => Promise<void>;
-	closeConnection: () => Promise<void>;
-}
-
-const STREAM_CONFIG_KEY: InjectionKey<StreamConfigReturn> = Symbol('stream-config');
-
-/**
- * 创建并提供 StreamConfig
- */
-export function provideStreamConfig(): StreamConfigReturn {
+function createStreamConfig() {
 	// 网络配置
 	const localAddress = ref('127.0.0.1');
 	const localPort = ref(8888);
@@ -112,7 +92,7 @@ export function provideStreamConfig(): StreamConfigReturn {
 		}
 	});
 
-	const state: StreamConfigReturn = {
+	return {
 		localAddress,
 		localPort,
 		remoteAddress,
@@ -125,20 +105,20 @@ export function provideStreamConfig(): StreamConfigReturn {
 		createConnection,
 		closeConnection,
 	};
-
-	provide(STREAM_CONFIG_KEY, state);
-	return state;
 }
 
-/**
- * 使用 StreamConfig
- */
-export function useStreamConfig(): StreamConfigReturn {
-	const config = inject(STREAM_CONFIG_KEY);
-	if (!config) {
-		throw new Error(
-			'useStreamConfig must be used within a component that calls provideStreamConfig'
-		);
+// =============== Provide/Inject 函数 ===============
+
+export function provideStreamConfig() {
+	const manager = createStreamConfig();
+	provideLocal(STREAM_CONFIG_KEY, manager);
+	return manager;
+}
+
+export function useStreamConfig() {
+	const manager = injectLocal(STREAM_CONFIG_KEY);
+	if (!manager) {
+		throw new Error('useFrameManager must be called within provideFrameManager');
 	}
-	return config;
+	return manager;
 }

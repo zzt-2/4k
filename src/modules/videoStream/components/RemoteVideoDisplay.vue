@@ -1,7 +1,7 @@
 <template>
-	<q-card class="remote-video-display fit column no-wrap">
+	<q-card class="remote-video-display fit no-wrap column">
 		<q-card-section class="row q-py-sm col-auto items-center justify-between">
-			<div class="text-subtitle1 text-weight-bold text-primary">远程视频</div>
+			<div class="text-subtitle1 text-weight-bold my-text-secondary">远程视频</div>
 			<div class="row q-gutter-sm items-center">
 				<q-btn
 					flat
@@ -22,7 +22,7 @@
 		>
 			<canvas
 				ref="canvasRef"
-				class="fit absolute-center z-top"
+				class="fit absolute-center z-1000"
 				style="object-fit: contain"
 			></canvas>
 
@@ -51,7 +51,7 @@
 			<transition name="slide-up">
 				<div
 					v-if="isDecoding || receivedFrameCount > 0"
-					class="absolute-bottom q-pa-sm bg-dark-transparent text-caption text-white backdrop-blur"
+					class="absolute-bottom q-pa-sm z-top bg-dark-transparent text-caption text-white backdrop-blur"
 				>
 					<div class="row q-gutter-x-lg items-center justify-center">
 						<div class="row q-gutter-x-xs items-center">
@@ -60,11 +60,7 @@
 						</div>
 						<div class="row q-gutter-x-xs items-center">
 							<q-icon name="speed" color="secondary" />
-							<span>帧率: {{ fps.toFixed(1) }} fps</span>
-						</div>
-						<div class="row q-gutter-x-xs items-center">
-							<q-icon name="schedule" color="accent" />
-							<span>延迟: {{ latency }} ms</span>
+							<span>帧率: {{ fps }} fps</span>
 						</div>
 					</div>
 				</div>
@@ -83,7 +79,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
 const receivedFrameCount = ref(0);
 const fps = ref(0);
-const latency = ref(0);
 const error = ref<string | null>(null);
 const isFullscreen = ref(false);
 
@@ -145,22 +140,18 @@ function toggleFullscreen() {
 function handleReceivedFrame(frame: ParsedFrame) {
 	receivedFrameCount.value++;
 
-	// 计算延迟
-	const now = Date.now();
-	latency.value = now - frame.timestamp;
-
 	// 计算帧率
-	frameTimestamps.push(now);
-	if (frameTimestamps.length > 30) {
+	frameTimestamps.push(Date.now());
+	if (frameTimestamps.length > 60) {
 		frameTimestamps.shift();
 	}
 	if (frameTimestamps.length > 1) {
-		const duration = frameTimestamps[frameTimestamps.length - 1] - frameTimestamps[0];
-		fps.value = ((frameTimestamps.length - 1) / duration) * 1000;
+		const duration = frameTimestamps[frameTimestamps.length - 1]! - frameTimestamps[0]!;
+		fps.value = Math.round(((frameTimestamps.length - 1) / duration) * 1000);
 	}
 
 	// 解码帧
-	decodeChunk(frame.data, frame.timestamp, frame.isKeyFrame || false);
+	decodeChunk(frame.data, frame.isKeyFrame || false);
 }
 
 // 监听解码器错误
@@ -179,13 +170,30 @@ export default {
 
 <style scoped>
 .remote-video-display {
-	min-height: 500px;
+	min-height: 300px;
 	border: 1px solid var(--accent);
 	box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
 }
 
 .video-container {
 	background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+}
+
+.canvas {
+	/* 1. 强制开启 GPU 独立图层，避免全屏重绘整个页面 */
+	transform: translateZ(0);
+	/* 2. 告诉浏览器这个元素会频繁变化 */
+	will-change: transform;
+	/* 3. 极其重要：全屏铺满，不要用 width/height 属性控制显示大小，用 CSS 控制 */
+	width: 100%;
+	height: 100%;
+	object-fit: contain; /* 保持比例 */
+
+	/* 4. 终极优化：像素化渲染 */
+	/* 如果你的源是 1080P，屏幕是 4K，浏览器默认会做平滑模糊处理（费性能）。
+     开启 pixelated 可以直接按像素放大，虽然有锯齿，但性能最好，延迟最低。 */
+	image-rendering: pixelated;
+	/* 备选：image-rendering: -webkit-optimize-contrast; */
 }
 
 .bg-dark-transparent {

@@ -124,7 +124,6 @@ export abstract class BaseConnection {
 			mainWindow.webContents.send('network:video-frame', {
 				connectionId: this._id,
 				frameId: frame.frameId,
-				timestamp: frame.timestamp,
 				data: frame.data, // 纯数据，已移除帧头
 				isKeyFrame: this.isKeyFrame(frame.data),
 			});

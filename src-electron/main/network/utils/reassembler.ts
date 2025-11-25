@@ -3,12 +3,7 @@
  * 将接收到的分片重组为完整数据包
  */
 
-import {
-	parseFrameHeader,
-	VIDEO_FRAME_HEADER_SIZE,
-	getFrameTypeName,
-	type VideoFrameHeader,
-} from './protocol';
+import { parseFrameHeader, VIDEO_FRAME_HEADER_SIZE } from './protocol';
 import type { FrameDefinition } from '../../../../src/core/types/protocol';
 
 /**
@@ -33,8 +28,6 @@ interface FrameBuffer {
 	frameId: number;
 	/** 总分片数 */
 	totalPackets: number;
-	/** 时间戳 */
-	timestamp: number;
 	/** 已接收的分片 */
 	fragments: Map<number, PacketFragment>;
 	/** 首次接收时间 */
@@ -49,8 +42,6 @@ export interface CompleteFrame {
 	definition: FrameDefinition;
 	/** 帧 ID */
 	frameId: number;
-	/** 时间戳 */
-	timestamp: number;
 	/** 完整数据 */
 	data: Buffer;
 }
@@ -112,7 +103,6 @@ export class FrameReassembler {
 					definition,
 					frameId,
 					totalPackets,
-					timestamp,
 					fragments: new Map(),
 					firstReceivedAt: Date.now(),
 				};
@@ -151,7 +141,7 @@ export class FrameReassembler {
 	 * @param frameBuffer 帧缓存
 	 */
 	private assembleAndEmit(frameBuffer: FrameBuffer): void {
-		const { definition, frameId, totalPackets, timestamp, fragments } = frameBuffer;
+		const { definition, frameId, totalPackets, fragments } = frameBuffer;
 
 		// 按分片序号排序并拼接数据
 		const sortedFragments: Buffer[] = [];
@@ -170,15 +160,14 @@ export class FrameReassembler {
 		const completeFrame: CompleteFrame = {
 			definition,
 			frameId,
-			timestamp,
 			data: completeData,
 		};
 
 		this.onCompleteFrame(completeFrame);
 
-		console.log(
-			`[FrameReassembler] Assembled frame ${frameId} (${getFrameTypeName(definition.magic)}): ${completeData.length} bytes from ${totalPackets} packets`
-		);
+		// console.log(
+		// 	`[FrameReassembler] Assembled frame ${frameId} (${getFrameTypeName(definition.magic)}): ${completeData.length} bytes from ${totalPackets} packets`
+		// );
 	}
 
 	/**
