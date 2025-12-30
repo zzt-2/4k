@@ -11,6 +11,7 @@
 					:color="isActive ? 'negative' : 'primary'"
 					:label="isActive ? '停止发送' : '开始发送'"
 					:icon="isActive ? 'stop' : 'play_arrow'"
+					:disabled="connectionId === null"
 					@click="toggleCapture"
 					glossy
 				>
@@ -119,6 +120,10 @@ const isActive = computed(() => currentSource.value.isActive.value);
 // 合并错误信息
 watch([camera.error, videoFileSource.error, encoderError], ([camErr, fileErr, encErr]) => {
 	error.value = camErr || fileErr || encErr;
+});
+
+watch(sourceType, () => {
+	stopAll();
 });
 
 // 监听流变化 (统一处理 Camera 和 VideoFile)

@@ -2,6 +2,7 @@
 	<q-layout view="hHh lpR fFf" class="h-100vh flex flex-col">
 		<TopMenuBar />
 		<div class="hologram-grid min-h-0 flex-1 overflow-y-auto">
+			<WaveformTestPage />
 			<router-view />
 		</div>
 

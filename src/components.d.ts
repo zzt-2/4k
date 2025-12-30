@@ -28,5 +28,6 @@ declare module 'vue' {
     TopMenuBar: typeof import('./core/components/TopMenuBar.vue')['default']
     VideoStream: typeof import('./pages/VideoStream.vue')['default']
     VideoStreamDemo: typeof import('./pages/VideoStreamDemo.vue')['default']
+    WaveformTestPage: typeof import('./pages/WaveformTestPage.vue')['default']
   }
 }

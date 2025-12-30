@@ -45,8 +45,7 @@ export function fragmentFrame(frameData: Buffer, frameId: number): Buffer[] {
 		const headerBuffer = createFrameHeader(
 			frameId & 0xffff, // 确保在 0-65535 范围内
 			i, // packetIndex
-			totalPackets,
-			BigInt(Date.now()) // 使用当前时间戳
+			totalPackets
 		);
 
 		// 组合帧头和数据

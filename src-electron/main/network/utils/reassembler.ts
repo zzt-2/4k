@@ -91,7 +91,7 @@ export class FrameReassembler {
 		try {
 			// 解析帧头
 			const header = parseFrameHeader(packet);
-			const { definition, frameId, packetIndex, totalPackets, timestamp } = header;
+			const { definition, frameId, packetIndex, totalPackets } = header;
 
 			// 提取数据部分（去掉协议头）
 			const data = packet.subarray(VIDEO_FRAME_HEADER_SIZE);
